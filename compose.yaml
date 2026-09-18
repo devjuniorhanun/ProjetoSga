@@ -1,0 +1,177 @@
+name: ${COMPOSE_PROJECT_NAME:-sisdeveagro}
+
+services:
+  frontend-build:
+    image: node:22-bookworm-slim
+    container_name: ${COMPOSE_PROJECT_NAME:-sisdeveagro}-frontend-build
+    working_dir: /app
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      NPM_CONFIG_CACHE: /tmp/npm-cache
+    command: >-
+      sh -c "if [ ! -f package.json ]; then echo 'Frontend ainda não foi entregue pelo Lovable.dev; build ignorado.'; exit 0; fi;
+      if [ ! -d node_modules ]; then npm ci --no-audit --no-fund; fi;
+      npm run build"
+    volumes:
+      - ./front:/app:rw
+    restart: "no"
+
+  gateway:
+    build:
+      context: ./infra/nginx
+    container_name: ${COMPOSE_PROJECT_NAME:-sisdeveagro}-gateway
+    restart: unless-stopped
+    ports:
+      - "${HTTPS_BIND_IP}:${HTTPS_PORT}:443"
+    volumes:
+      - ./front:/var/www/front:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend-build:
+        condition: service_completed_successfully
+    networks:
+      - edge
+
+  api:
+    build:
+      context: ./back
+      args:
+        PUID: ${HOST_UID:-1000}
+        PGID: ${HOST_GID:-1000}
+    container_name: ${COMPOSE_PROJECT_NAME:-sisdeveagro}-api
+    restart: unless-stopped
+    expose:
+      - "9000"
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_DEBUG: ${APP_DEBUG}
+      APP_URL: ${APP_URL}
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${MYSQL_DATABASE}
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - ./back:/var/www/html:rw
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan about >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - edge
+      - private
+
+  mysql:
+    image: mysql:8.4
+    container_name: ${COMPOSE_PROJECT_NAME:-sisdeveagro}-mysql
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+    ports:
+      - "127.0.0.1:3306:3306"
+    expose:
+      - "3306"
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: ${TZ}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks:
+      - edge
+      - private
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-sisdeveagro}-redis
+    restart: unless-stopped
+    command: ["sh", "-c", "redis-server --appendonly yes --requirepass \"$${REDIS_PASSWORD}\""]
+    expose:
+      - "6379"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - private
+
+  phpmyadmin:
+    image: phpmyadmin:${PHPMYADMIN_VERSION:-5.2.3}-apache
+    container_name: ${COMPOSE_PROJECT_NAME:-sisdeveagro}-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_ARBITRARY: "0"
+      PMA_ABSOLUTE_URI: ${APP_URL}/phpmyadmin/
+      UPLOAD_LIMIT: 256M
+    expose:
+      - "80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - edge
+      - private
+
+  mysql-backup:
+    build:
+      context: ./infra/backup
+    container_name: ${COMPOSE_PROJECT_NAME:-sisdeveagro}-mysql-backup
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
+      BACKUP_TIME: ${BACKUP_TIME}
+      TZ: ${TZ}
+    volumes:
+      - ./backups/mysql:/backups:rw
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - private
+
+networks:
+  edge:
+    name: ${COMPOSE_PROJECT_NAME:-sisdeveagro}-edge
+
+  private:
+    name: ${COMPOSE_PROJECT_NAME:-sisdeveagro}-private
+    internal: true
+
+volumes:
+  mysql_data:
+  redis_data:

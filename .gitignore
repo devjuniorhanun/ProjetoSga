@@ -1,0 +1,12 @@
+.env
+/back/vendor/
+/back/storage/logs/*.log
+/back/storage/framework/cache/*
+/back/storage/framework/sessions/*
+/back/storage/framework/views/*
+/back/bootstrap/cache/*.php
+/front/node_modules/
+/front/dist/
+/certs/*.key
+/certs/*.pem
+/backups/mysql/*.sql.gz

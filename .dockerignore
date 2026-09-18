@@ -1,0 +1,8 @@
+.git
+.env
+back/vendor
+back/storage/logs
+front/node_modules
+front/dist
+backups/mysql
+certs

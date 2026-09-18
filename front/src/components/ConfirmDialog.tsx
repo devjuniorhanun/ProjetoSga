@@ -1,0 +1,54 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+interface ConfirmDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title?: string;
+  description?: string;
+  onConfirm: () => void;
+  confirmLabel?: string;
+  confirmVariant?: 'destructive' | 'success';
+}
+
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  title = 'Confirmar exclusão',
+  description = 'Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.',
+  onConfirm,
+  confirmLabel = 'Excluir',
+  confirmVariant = 'destructive',
+}: ConfirmDialogProps) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onConfirm}
+            className={
+              confirmVariant === 'success'
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+            }
+          >
+            {confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
