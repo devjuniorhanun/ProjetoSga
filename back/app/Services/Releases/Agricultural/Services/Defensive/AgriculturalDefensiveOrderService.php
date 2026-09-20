@@ -300,8 +300,13 @@ class AgriculturalDefensiveOrderService
     public function close(array $data, ?int $userId = null): AgriculturalDefensiveOrder
     {
         return DB::transaction(function () use ($data, $userId): AgriculturalDefensiveOrder {
+            $legacyPayload = empty($data['os_number']) && !empty($data['order_id']);
             $order = AgriculturalDefensiveOrder::query()
-                ->where('os_number', $data['os_number'])
+                ->when(
+                    $legacyPayload,
+                    fn ($query) => $query->whereKey($data['order_id']),
+                    fn ($query) => $query->where('os_number', $data['os_number'])
+                )
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -309,10 +314,13 @@ class AgriculturalDefensiveOrderService
                 throw new RuntimeException('A OS não está aberta para fechamento.');
             }
 
-            $tank = OperatorTank::query()->lockForUpdate()->findOrFail($data['operator_tank_id']);
+            $closingBomb = round((float) $data['closing_bomb'], 3);
+            $tank = $legacyPayload
+                ? $this->resolveLegacyClosingTank($order, (int) $data['operator_tank_id'], $closingBomb)
+                : OperatorTank::query()->lockForUpdate()->findOrFail($data['operator_tank_id']);
 
-            if ($tank->date->format('Y-m-d') !== $order->application_date->format('Y-m-d')) {
-                throw new RuntimeException('O tanque do operador deve pertencer à mesma data da OS.');
+            if ($tank->date->lt($order->application_date->copy()->startOfDay())) {
+                throw new RuntimeException('O tanque do operador não pode ser anterior à data programada da OS.');
             }
 
             $isTankOperator = AgriculturalDefensiveOrderOperator::query()
@@ -325,7 +333,6 @@ class AgriculturalDefensiveOrderService
                 throw new RuntimeException('O operador do tanque precisa estar relacionado à OS com a função T.');
             }
 
-            $closingBomb = round((float) $data['closing_bomb'], 3);
             $newUsedBomb = round((float) $order->used_bomb + $closingBomb, 3);
 
             $closing = AgriculturalDefensiveOrderClosing::create([
@@ -387,8 +394,77 @@ class AgriculturalDefensiveOrderService
                 $order->update(['status' => 'I']);
             }
 
+            // Recompõe os saldos transportados caso o fechamento tenha sido
+            // registrado em um tanque anterior a outros tanques já existentes.
+            $lastTankDate = OperatorTank::query()
+                ->where('operator_id', $tank->operator_id)
+                ->max('date');
+            $this->synchronizeTankBalancesThroughDate(
+                (int) $tank->operator_id,
+                Carbon::parse($lastTankDate ?: $tank->date)->toDateString()
+            );
+
             return $this->find($order->refresh());
         });
+    }
+
+    /**
+     * Compatibilidade com a tela atual, que envia operator_id dentro de
+     * operator_tank_id. Localiza o primeiro tanque cronológico, a partir da
+     * data da OS, com saldo suficiente para todos os produtos do fechamento.
+     */
+    private function resolveLegacyClosingTank(
+        AgriculturalDefensiveOrder $order,
+        int $operatorId,
+        float $closingBomb
+    ): OperatorTank {
+        $isTankOperator = AgriculturalDefensiveOrderOperator::query()
+            ->where('agricultural_defensive_order_id', $order->id)
+            ->where('operator_id', $operatorId)
+            ->where('function', 'T')
+            ->exists();
+
+        if (!$isTankOperator) {
+            throw new RuntimeException('O tanqueiro informado não está relacionado à OS com a função T.');
+        }
+
+        $lastTankDate = OperatorTank::query()
+            ->where('operator_id', $operatorId)
+            ->max('date');
+        if ($lastTankDate) {
+            $this->synchronizeTankBalancesThroughDate(
+                $operatorId,
+                Carbon::parse($lastTankDate)->toDateString()
+            );
+        }
+
+        $products = $order->products()->lockForUpdate()->get();
+        $tanks = OperatorTank::query()
+            ->where('operator_id', $operatorId)
+            ->whereDate('date', '>=', $order->application_date->toDateString())
+            ->with('products')
+            ->orderBy('date')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        if ($tanks->isEmpty()) {
+            throw new RuntimeException('Nenhum tanque operacional foi encontrado para o tanqueiro a partir da data da OS.');
+        }
+
+        foreach ($tanks as $tank) {
+            $balances = $tank->products->keyBy('product_id');
+            $hasBalance = $products->every(function ($product) use ($balances, $closingBomb): bool {
+                $required = round($closingBomb * (float) $product->pump, 3);
+                return (float) ($balances->get($product->product_id)?->current_quantity ?? 0) >= $required - 0.0000001;
+            });
+
+            if ($hasBalance) {
+                return $tank;
+            }
+        }
+
+        throw new RuntimeException('Nenhum tanque do operador possui saldo suficiente para todos os produtos deste fechamento.');
     }
 
     public function activeCrops()

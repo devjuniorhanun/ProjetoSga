@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,6 +35,7 @@ function formatDateTime(value?: string | null): string {
 
 export default function OperatorTankPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [cropId, setCropId] = useState('');
   const [operatorId, setOperatorId] = useState('');
   const [date, setDate] = useState('');
@@ -361,9 +363,9 @@ export default function OperatorTankPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            disabled
-                            aria-label="Impressão indisponível"
-                            title="Modelo de impressão será definido posteriormente"
+                            aria-label={`Imprimir retirada ${w.withdrawal_number}`}
+                            title="Imprimir retirada"
+                            onClick={() => navigate(`/entries/agricultural/tanks/withdrawals/${w.id}/print`)}
                           >
                             <Printer className="h-4 w-4" />
                           </Button>

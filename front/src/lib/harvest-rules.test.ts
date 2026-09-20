@@ -8,10 +8,12 @@ import api from './api';
 import {
   HARVEST_RELEASES_ENDPOINT,
   HARVEST_PLOT_FIELDS_ENDPOINT,
+  HARVEST_STATE_REGISTRATIONS_ENDPOINT,
   HARVEST_MATRIX_FREIGHT_ENDPOINT,
   HARVEST_ADVANCES_ENDPOINT,
   HARVEST_TRANSPORTER_SUPPLIERS_ENDPOINT,
   harvestPlotFieldsService,
+  harvestStateRegistrationsService,
   harvestReleasesService,
   harvestAdvancesService,
 } from './api-services-harvest';
@@ -36,8 +38,17 @@ describe('endpoints oficiais da colheita', () => {
   it('usa /releases/harvest e nunca os endpoints antigos', () => {
     expect(HARVEST_RELEASES_ENDPOINT).toBe('/releases/harvest/harvest-releases');
     expect(HARVEST_PLOT_FIELDS_ENDPOINT).toBe('/releases/harvest/plot-fields');
+    expect(HARVEST_STATE_REGISTRATIONS_ENDPOINT).toBe('/releases/harvest/state-registrations');
     expect(HARVEST_MATRIX_FREIGHT_ENDPOINT).toBe('/releases/harvest/matrix-freight');
     expect(HARVEST_RELEASES_ENDPOINT).not.toContain('/entries/');
+  });
+
+  it('busca as inscrições estaduais pelo produtor selecionado', async () => {
+    mockedApi.get.mockResolvedValue({ data: { data: [] } });
+    await harvestStateRegistrationsService.byOwner('3');
+    expect(mockedApi.get).toHaveBeenCalledWith(HARVEST_STATE_REGISTRATIONS_ENDPOINT, {
+      params: { owner_id: '3' },
+    });
   });
 
   it('carrega apenas os talhões da safra selecionada', async () => {
@@ -88,6 +99,7 @@ describe('payload do lançamento', () => {
       crop_id: '1',
       driver_id: '2',
       owner_id: '3',
+      farm_state_registration_id: '30',
       plot_field_id: '4',
       warehouse_id: '5',
       lanyard_id: '6',
@@ -111,6 +123,7 @@ describe('payload do lançamento', () => {
         'discount',
         'driver_id',
         'gross_weight',
+        'farm_state_registration_id',
         'lanyard_id',
         'owner_id',
         'plot_field_id',
@@ -217,4 +230,3 @@ describe('invalidações do React Query', () => {
     ]);
   });
 });
-

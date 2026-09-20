@@ -136,6 +136,7 @@ export interface Supplier {
   pix_key: string;
   account_type: string;
   type_supplier_ids?: string[];
+  typeSuppliers?: string[];
 }
 
 export interface Warehouse {

@@ -51,7 +51,7 @@ class AgriculturalDefensiveOrderStructureTest extends TestCase
         $this->assertStringContainsString("'suggested_withdrawal'", $service);
         $this->assertStringContainsString('OperatorTankWithdrawal::create', $service);
         $this->assertStringContainsString("'used_quantity' => 0.0", $service);
-        $this->assertStringContainsString("\$recommendedPump = round(\$requestedArea / (float) \$data['flow'], 3)", $service);
+        $this->assertStringContainsString("\$recommendedPump = round(\$requestedArea / (float) \$data['pump_capacity'], 3)", $service);
         $this->assertStringContainsString("'recommended_pump' => \$recommendedPump", $service);
         $this->assertStringContainsString("(float) \$productData['pump'] * \$recommendedPump", $service);
         $this->assertStringContainsString("(float) \$orderProduct->pump * (float) \$order->recommended_pump", $service);

@@ -903,7 +903,6 @@ class LegacyCsvImportService
                     [
                         'producer_id' => $producerId,
                         'farm_id' => $newId,
-                        'culture_id' => null,
                         'description' => null,
                         'status' => $this->status($row['status']),
                         'deleted_at' => null,
@@ -1296,9 +1295,13 @@ class LegacyCsvImportService
         foreach ($this->rows($files, 'lancamento_safras.csv') as $row) {
             $legacyId = (int) $row['id'];
             $cropId = $this->resolveSeededCrop($row['safra_id'] ?? null);
+            $ownerId = $this->resolve('owners', $row['proprietario_id'] ?? null);
+            $farmId = $this->resolve('farms', $row['fazenda_id'] ?? null);
+            $stateRegistrationId = $this->resolveHarvestStateRegistration($ownerId, $farmId);
             $relations = [
                 'driver_id' => $this->resolve('drivers', $row['motorista_id'] ?? null),
-                'owner_id' => $this->resolve('owners', $row['proprietario_id'] ?? null),
+                'owner_id' => $ownerId,
+                'farm_state_registration_id' => $stateRegistrationId,
                 'plot_field_id' => $this->resolve('plot_fields', $row['locacao_talhao_id'] ?? null),
                 'warehouse_id' => $this->resolve('warehouses', $row['armazem_id'] ?? null),
                 'lanyard_id' => $this->resolve('lanyards', $row['colhedor_id'] ?? null),
@@ -1306,8 +1309,9 @@ class LegacyCsvImportService
             ];
             if (!$cropId || in_array(null, $relations, true)) {
                 if ($strict) {
-                    throw new RuntimeException("Lançamento de safra legado {$legacyId} possui relacionamento não resolvido.");
+                    throw new RuntimeException("Lançamento de safra legado {$legacyId} possui relacionamento não resolvido, incluindo a inscrição estadual do produtor e da fazenda.");
                 }
+                $this->warnings[] = "Lançamento de safra legado {$legacyId}: registro ignorado porque a inscrição estadual do produtor e da fazenda não pôde ser determinada de forma única.";
                 $this->count($batch, false);
                 continue;
             }
@@ -1340,6 +1344,24 @@ class LegacyCsvImportService
             $this->map($batch, 'harvest_releases', $legacyId, 'harvest_releases', $newId);
             $this->count($batch, true);
         }
+    }
+
+    private function resolveHarvestStateRegistration(?int $ownerId, ?int $farmId): ?int
+    {
+        if (! $ownerId || ! $farmId) {
+            return null;
+        }
+
+        $ids = DB::table('farm_state_registrations as fsr')
+            ->join('producers as p', 'p.id', '=', 'fsr.producer_id')
+            ->where('p.owner_id', $ownerId)
+            ->where('fsr.farm_id', $farmId)
+            ->where('fsr.status', 'A')
+            ->whereNull('fsr.deleted_at')
+            ->whereNull('p.deleted_at')
+            ->pluck('fsr.id');
+
+        return $ids->count() === 1 ? (int) $ids->first() : null;
     }
 
     // Importa o livro financeiro antigo diretamente para PayAccount.

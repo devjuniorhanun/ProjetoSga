@@ -21,6 +21,14 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+function apiMessage(error: unknown, fallback: string): string {
+  const response = (error as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response;
+  const firstFieldError = response?.data?.errors
+    ? Object.values(response.data.errors)[0]?.[0]
+    : undefined;
+  return firstFieldError || response?.data?.message || fallback;
+}
+
 export function DefensiveOrderClosingDialog({ orderId, open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const [operatorTankId, setOperatorTankId] = useState('');
@@ -57,8 +65,8 @@ export function DefensiveOrderClosingDialog({ orderId, open, onOpenChange }: Pro
       toast.error('Selecione o tanque do operador (tanqueiro).');
       return;
     }
-    if (closingBombValue < 0 || !closingBomb) {
-      toast.error('Informe a quantidade de bombas do fechamento.');
+    if (closingBombValue <= 0 || !closingBomb) {
+      toast.error('A quantidade de bombas deve ser maior que zero.');
       return;
     }
     setSaving(true);
@@ -74,8 +82,8 @@ export function DefensiveOrderClosingDialog({ orderId, open, onOpenChange }: Pro
       queryClient.invalidateQueries({ queryKey: ['operator-tank'] });
       queryClient.invalidateQueries({ queryKey: ['tank-planning'] });
       onOpenChange(false);
-    } catch {
-      toast.error('Erro ao registrar o fechamento.');
+    } catch (error) {
+      toast.error(apiMessage(error, 'Erro ao registrar o fechamento.'));
     } finally {
       setSaving(false);
     }
@@ -103,7 +111,7 @@ export function DefensiveOrderClosingDialog({ orderId, open, onOpenChange }: Pro
               </div>
               <div className="rounded-md border p-3">
                 <p className="text-xs text-muted-foreground">Bombas restantes</p>
-                <p className="text-lg font-semibold">{Number(remaining.toFixed(4))}</p>
+                <p className="text-lg font-semibold">{Number(remaining.toFixed(3))}</p>
               </div>
               <div className="rounded-md border p-3">
                 <p className="text-xs text-muted-foreground">Executado</p>
@@ -134,7 +142,7 @@ export function DefensiveOrderClosingDialog({ orderId, open, onOpenChange }: Pro
                           <TableCell>{when ? formatDate(when) : '-'}</TableCell>
                           <TableCell>{c.closing_type ?? '-'}</TableCell>
                           <TableCell className="text-right">{c.closing_bomb}</TableCell>
-                          <TableCell className="text-right">{Number(Number(accumulated).toFixed(4))}</TableCell>
+                        <TableCell className="text-right">{Number(Number(accumulated).toFixed(3))}</TableCell>
                         </TableRow>
                       );
                     })}
@@ -164,7 +172,7 @@ export function DefensiveOrderClosingDialog({ orderId, open, onOpenChange }: Pro
                 <Label>Bombas do fechamento</Label>
                 <Input
                   type="number"
-                  step="0.0001"
+                  step="0.001"
                   min="0"
                   value={closingBomb}
                   onChange={(e) => setClosingBomb(e.target.value)}
@@ -199,7 +207,7 @@ export function DefensiveOrderClosingDialog({ orderId, open, onOpenChange }: Pro
                         <TableCell>{p.product_name || String(p.product_id)}</TableCell>
                         <TableCell className="text-right">{p.pump}</TableCell>
                         <TableCell className="text-right">
-                          {Number((closingBombValue * Number(p.pump || 0)).toFixed(4))}
+                          {Number((closingBombValue * Number(p.pump || 0)).toFixed(3))}
                         </TableCell>
                       </TableRow>
                     ))}

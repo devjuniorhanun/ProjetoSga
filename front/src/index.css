@@ -303,6 +303,43 @@
   }
 }
 
+@media print {
+  html:has(.tank-withdrawal-print-page),
+  body:has(.tank-withdrawal-print-page) {
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body:has(.tank-withdrawal-print-page) > #root > div > aside,
+  body:has(.tank-withdrawal-print-page) nav,
+  body:has(.tank-withdrawal-print-page) .tank-withdrawal-print-actions,
+  body:has(.tank-withdrawal-print-page) main > div > div:first-child {
+    display: none !important;
+  }
+
+  body:has(.tank-withdrawal-print-page),
+  body:has(.tank-withdrawal-print-page) > #root > div,
+  body:has(.tank-withdrawal-print-page) main,
+  body:has(.tank-withdrawal-print-page) main > div,
+  body:has(.tank-withdrawal-print-page) main > div > div,
+  .tank-withdrawal-print-page {
+    width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .tank-withdrawal-print-document {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+    color: #000 !important;
+  }
+}
+
 /* Rich text editor (Quill) theming */
 .rich-text-editor .ql-toolbar {
   border: none;

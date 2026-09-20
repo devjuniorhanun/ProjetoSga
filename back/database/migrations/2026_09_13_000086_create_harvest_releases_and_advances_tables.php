@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('crop_id')->constrained()->restrictOnDelete();
             $table->foreignId('driver_id')->constrained()->restrictOnDelete();
             $table->foreignId('owner_id')->constrained()->restrictOnDelete();
+            $table->foreignId('farm_state_registration_id')->constrained('farm_state_registrations')->restrictOnDelete();
             $table->foreignId('plot_field_id')->constrained()->restrictOnDelete();
             $table->foreignId('warehouse_id')->constrained()->restrictOnDelete();
             $table->foreignId('lanyard_id')->constrained()->restrictOnDelete();

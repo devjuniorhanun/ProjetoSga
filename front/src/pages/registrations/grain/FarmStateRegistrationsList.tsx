@@ -18,11 +18,6 @@ export default function FarmStateRegistrationsList() {
     queryKey: ['grain-support-farms', 'all'],
     queryFn: () => grainSupportService.farms(),
   });
-  const { data: cultures = [] } = useQuery({
-    queryKey: ['grain-support-cultures', 'all'],
-    queryFn: grainSupportService.cultures,
-  });
-
   const fields: CrudField[] = [
     {
       name: 'producer_id',
@@ -41,13 +36,6 @@ export default function FarmStateRegistrationsList() {
           .filter((f) => !values.producer_id || !f.producer_id || f.producer_id === values.producer_id)
           .map((f) => ({ value: f.id, label: f.name })),
     },
-    {
-      name: 'culture_id',
-      label: 'Cultura',
-      type: 'combobox',
-      required: true,
-      options: cultures.map((c) => ({ value: c.id, label: c.name })),
-    },
     { name: 'state_registration', label: 'Inscrição estadual', type: 'text', required: true },
     { name: 'description', label: 'Descrição', type: 'text' },
     {
@@ -65,7 +53,7 @@ export default function FarmStateRegistrationsList() {
   return (
     <CrudResourcePage<FarmStateRegistration>
       title="Inscrições Estaduais"
-      description="Inscrições estaduais por fazenda e cultura"
+      description="Inscrições estaduais por produtor e fazenda"
       singular="Inscrição estadual"
       queryKey="farm-state-registrations"
       service={farmStateRegistrationsService}
@@ -76,7 +64,6 @@ export default function FarmStateRegistrationsList() {
       buildPayload={(values) => ({
         producer_id: values.producer_id,
         farm_id: values.farm_id,
-        culture_id: values.culture_id,
         state_registration: values.state_registration,
         description: values.description || null,
         status: values.status,
@@ -85,7 +72,7 @@ export default function FarmStateRegistrationsList() {
         { key: 'state_registration', label: 'Inscrição' },
         { key: 'producer_name', label: 'Produtor', render: (item) => item.producer_name ?? '-' },
         { key: 'farm_name', label: 'Fazenda', render: (item) => item.farm_name ?? '-' },
-        { key: 'culture_name', label: 'Cultura', render: (item) => item.culture_name ?? '-' },
+        { key: 'description', label: 'Observações', render: (item) => item.description ?? '-' },
         { key: 'status', label: 'Situação', render: (item) => <StatusBadge status={item.status} /> },
       ]}
       fields={fields}

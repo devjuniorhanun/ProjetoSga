@@ -16,6 +16,13 @@ use Illuminate\Validation\Rule;
 class SupplierRequest extends FormRequest
 // Abre o bloco de código atual.
 {
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('type_supplier_ids') && $this->has('typeSuppliers')) {
+            $this->merge(['type_supplier_ids' => $this->input('typeSuppliers')]);
+        }
+    }
+
 // Autoriza o uso desta requisição; a autorização de negócio é aplicada pelas rotas/middleware.
 // Declara o método responsável por esta operação.
     public function authorize(): bool
@@ -89,8 +96,8 @@ class SupplierRequest extends FormRequest
             // Valida o campo conforme as regras de negócio.
 // Restringe o campo a um conjunto fechado de valores permitidos.
             'status' => ['sometimes', Rule::in(['A','I'])],
-            'typeSuppliers' => ['sometimes', 'array'],
-            'typeSuppliers.*' => ['integer', 'distinct', 'exists:type_suppliers,id'],
+            'type_supplier_ids' => ['required', 'array', 'min:1'],
+            'type_supplier_ids.*' => ['integer', 'distinct', 'exists:type_suppliers,id'],
 // Executa a instrução correspondente à regra ou operação atual.
         ];
 // Fecha o bloco de código atual.

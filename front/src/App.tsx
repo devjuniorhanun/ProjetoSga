@@ -62,6 +62,7 @@ import ProductivityHarvestersPage from "@/pages/reports/harvest/ProductivityHarv
 import DefensiveServicesList from "@/pages/entries/agricultural/defensives/DefensiveServicesList";
 import DefensiveServiceOrder from "@/pages/entries/agricultural/defensives/DefensiveServiceOrder";
 import OperatorTankPage from "@/pages/entries/agricultural/defensives/OperatorTankPage";
+import OperatorTankWithdrawalPrintPage from "@/pages/entries/agricultural/defensives/OperatorTankWithdrawalPrintPage";
 import DefensiveClosingsPage from "@/pages/entries/agricultural/defensives/DefensiveClosingsPage";
 import DefensiveConsolidationPage from "@/pages/entries/agricultural/defensives/DefensiveConsolidationPage";
 import FuelStationsList from "@/pages/entries/fuel/stations/FuelStationsList";
@@ -231,6 +232,7 @@ const App = () => (
               <Route path="/entries/agricultural/defensives" element={<DefensiveServicesList />} />
               <Route path="/entries/agricultural/defensives/order/:id" element={<DefensiveServiceOrder />} />
               <Route path="/entries/agricultural/tanks" element={<OperatorTankPage />} />
+              <Route path="/entries/agricultural/tanks/withdrawals/:id/print" element={<OperatorTankWithdrawalPrintPage />} />
               <Route path="/entries/agricultural/defensives/closings" element={<DefensiveClosingsPage />} />
               <Route path="/entries/agricultural/defensives/consolidation" element={<DefensiveConsolidationPage />} />
               {/* Lançamentos - Combustíveis e Lubrificantes */}

@@ -166,6 +166,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::prefix('releases/harvest')->group(function (): void {
         Route::get('plot-fields', [HarvestReleaseController::class, 'plotFields'])->middleware('permission:harvest.release.manage');
+        Route::get('state-registrations', [HarvestReleaseController::class, 'stateRegistrations'])->middleware('permission:harvest.release.manage');
         Route::get('matrix-freight', [HarvestReleaseController::class, 'matrixFreight'])->middleware('permission:harvest.release.manage');
         Route::apiResource('harvest-releases', HarvestReleaseController::class)->middleware('permission:harvest.release.manage');
         Route::get('grain-transfers/eligible-owners', [HarvestGrainTransferController::class, 'eligibleOwners'])

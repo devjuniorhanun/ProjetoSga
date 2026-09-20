@@ -18,6 +18,7 @@ use App\Models\Releases\Agricultural\Services\Defensive\OperatorTankWithdrawal;
 use App\Services\Releases\Agricultural\Services\Defensive\DefensiveService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use RuntimeException;
 
 class DefensiveServiceController extends Controller
 {
@@ -56,8 +57,17 @@ class DefensiveServiceController extends Controller
 
     public function close(AgriculturalDefensiveOrderClosingRequest $request)
     {
-        $order = $this->service->close($request->validated(), $request->user()?->id);
-        return new AgriculturalDefensiveOrderResource($order);
+        try {
+            $order = $this->service->close($request->validated(), $request->user()?->id);
+            return new AgriculturalDefensiveOrderResource($order);
+        } catch (RuntimeException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => [
+                    'closing' => [$exception->getMessage()],
+                ],
+            ], 422);
+        }
     }
 
     public function activeCrops()
@@ -111,9 +121,13 @@ class DefensiveServiceController extends Controller
 
     public function tankWithdrawal(OperatorTankWithdrawalRequest $request)
     {
-        return new OperatorTankWithdrawalResource(
-            $this->service->withdrawForOperator($request->validated(), $request->user()?->id)
-        );
+        try {
+            return new OperatorTankWithdrawalResource(
+                $this->service->withdrawForOperator($request->validated(), $request->user()?->id)
+            );
+        } catch (RuntimeException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        }
     }
 
     public function withdrawals(Request $request)

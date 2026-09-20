@@ -129,13 +129,11 @@ export interface FarmStateRegistration {
   id: string;
   producer_id: string;
   farm_id: string;
-  culture_id: string;
   state_registration: string;
   description?: string | null;
   status: ActiveStatus;
   producer_name?: string | null;
   farm_name?: string | null;
-  culture_name?: string | null;
 }
 
 export interface GrainImpurityType {

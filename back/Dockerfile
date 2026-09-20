@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 
 RUN groupadd -g ${PGID} appgroup 2>/dev/null || true \
     && useradd -m -u ${PUID} -g ${PGID} -s /bin/bash appuser 2>/dev/null || true

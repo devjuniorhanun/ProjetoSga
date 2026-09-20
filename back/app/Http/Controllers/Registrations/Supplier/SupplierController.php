@@ -75,7 +75,7 @@ class SupplierController extends Controller
     {
         // Retorna o registro transformado pelo Resource.
 // Retorna o resultado da operação atual.
-        return new SupplierResource($supplier);
+        return new SupplierResource($supplier->load(['types','bankSuppliers','warehouses','drivers','lanyards']));
 // Fecha o bloco de código atual.
     }
 

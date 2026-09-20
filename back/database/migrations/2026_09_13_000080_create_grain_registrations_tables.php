@@ -25,14 +25,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('producer_id')->constrained()->restrictOnDelete();
             $table->foreignId('farm_id')->constrained()->restrictOnDelete();
-            $table->foreignId('culture_id')->constrained()->restrictOnDelete();
-            $table->string('state_registration', 50);
+            $table->string('state_registration', 50)->unique();
             $table->string('description')->nullable();
             $table->char('status', 1)->default('A');
             $table->timestamps();
             $table->softDeletes();
-            $table->unique(['farm_id', 'culture_id', 'state_registration'], 'farm_state_reg_unique');
-            $table->index(['producer_id', 'culture_id', 'status'], 'farm_state_reg_search');
+            $table->index(['producer_id', 'farm_id', 'status'], 'farm_state_reg_search');
         });
 
         Schema::create('grain_scales', function (Blueprint $table): void {

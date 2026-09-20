@@ -22,7 +22,7 @@ const schema = z.object({
   cpf_cnpj: z.string().trim().min(1, 'CPF/CNPJ obrigatório').max(20),
   rg_ie: z.string().trim().max(20).optional().or(z.literal('')),
   status: z.enum(['A', 'I']),
-  typeSuppliers: z.array(z.string()).min(1, 'Selecione ao menos um tipo de fornecedor.'),
+  type_supplier_ids: z.array(z.string()).min(1, 'Selecione ao menos um tipo de fornecedor.'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -53,12 +53,12 @@ export function SupplierForm({ item, onSave, onCancel }: Props) {
           cpf_cnpj: item.cpf_cnpj,
           rg_ie: item.rg_ie || '',
           status: item.status,
-          typeSuppliers: (item.typeSuppliers ?? []).map(String),
+          type_supplier_ids: (item.type_supplier_ids ?? item.typeSuppliers ?? []).map(String),
         }
-      : { status: 'A', typeSuppliers: [] },
+      : { status: 'A', type_supplier_ids: [] },
   });
 
-  const selectedTypes = watch('typeSuppliers') ?? [];
+  const selectedTypes = watch('type_supplier_ids') ?? [];
   const currentType = watch('type');
 
   // Initialize CPF/CNPJ display with mask
@@ -89,7 +89,7 @@ export function SupplierForm({ item, onSave, onCancel }: Props) {
     const updated = selectedTypes.includes(normalizedId)
       ? selectedTypes.filter((typeId) => typeId !== normalizedId)
       : [...selectedTypes, normalizedId];
-    setValue('typeSuppliers', updated, { shouldDirty: true, shouldValidate: true });
+    setValue('type_supplier_ids', updated, { shouldDirty: true, shouldValidate: true });
   };
 
   const onSubmit = async (data: FormData) => {
@@ -189,7 +189,7 @@ export function SupplierForm({ item, onSave, onCancel }: Props) {
                 ))}
               </div>
             )}
-            {errors.typeSuppliers && <p className="text-sm text-destructive">{errors.typeSuppliers.message}</p>}
+            {errors.type_supplier_ids && <p className="text-sm text-destructive">{errors.type_supplier_ids.message}</p>}
           </div>
         </TabsContent>
       </Tabs>

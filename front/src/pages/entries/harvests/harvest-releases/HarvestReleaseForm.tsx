@@ -11,6 +11,7 @@ import {
   harvestMatrixFreightService,
   harvestPlotFieldsService,
   harvestReleasesService,
+  harvestStateRegistrationsService,
 } from '@/lib/api-services-harvest';
 import {
   buildHarvestReleasePayload,
@@ -33,6 +34,7 @@ const schema = z.object({
   crop_id: z.string().min(1, 'Safra obrigatória'),
   driver_id: z.string().min(1, 'Motorista obrigatório'),
   owner_id: z.string().min(1, 'Produtor obrigatório'),
+  farm_state_registration_id: z.string().min(1, 'Inscrição estadual obrigatória'),
   plot_field_id: z.string().min(1, 'Talhão obrigatório'),
   warehouse_id: z.string().min(1, 'Armazém obrigatório'),
   lanyard_id: z.string().min(1, 'Colhedor obrigatório'),
@@ -45,7 +47,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const SESSION_KEYS = ['crop_id', 'owner_id', 'plot_field_id', 'warehouse_id', 'lanyard_id', 'release_date'] as const;
+const SESSION_KEYS = ['crop_id', 'owner_id', 'farm_state_registration_id', 'plot_field_id', 'warehouse_id', 'lanyard_id', 'release_date'] as const;
 const SESSION_STORAGE_KEY = 'harvest-release-session';
 
 function getSessionValues(): Partial<FormData> {
@@ -89,6 +91,7 @@ export function HarvestReleaseForm({ item, onSave, onCancel }: Props) {
           crop_id: item.crop_id,
           driver_id: item.driver_id,
           owner_id: item.owner_id,
+          farm_state_registration_id: item.farm_state_registration_id ?? '',
           plot_field_id: item.plot_field_id,
           warehouse_id: item.warehouse_id,
           lanyard_id: item.lanyard_id,
@@ -109,10 +112,17 @@ export function HarvestReleaseForm({ item, onSave, onCancel }: Props) {
   });
 
   const cropId = watch('crop_id');
+  const ownerId = watch('owner_id');
   const plotFieldId = watch('plot_field_id');
   const warehouseId = watch('warehouse_id');
   const grossWeight = Number(watch('gross_weight')) || 0;
   const discount = Number(watch('discount')) || 0;
+
+  const { data: stateRegistrations = [], isFetching: stateRegistrationsLoading } = useQuery({
+    queryKey: ['harvest-state-registrations', ownerId],
+    queryFn: () => harvestStateRegistrationsService.byOwner(ownerId),
+    enabled: Boolean(ownerId),
+  });
 
   // Talhões da safra selecionada (endpoint específico).
   const { data: plotFields = [], isFetching: plotFieldsLoading } = useQuery({
@@ -242,7 +252,10 @@ export function HarvestReleaseForm({ item, onSave, onCancel }: Props) {
               .filter((o) => o.payment_type === 'D' || o.id === watch('owner_id'))
               .map((o) => ({ value: o.id, label: o.corporate_name || o.fantasy_name }))}
             value={watch('owner_id')}
-            onValueChange={(v) => setValue('owner_id', v)}
+            onValueChange={(v) => {
+              setValue('owner_id', v);
+              setValue('farm_state_registration_id', '');
+            }}
             placeholder="Selecione o produtor"
             searchPlaceholder="Buscar produtor..."
           />
@@ -276,6 +289,23 @@ export function HarvestReleaseForm({ item, onSave, onCancel }: Props) {
           )}
           {errors.plot_field_id && <p className="text-sm text-destructive">{errors.plot_field_id.message}</p>}
         </div>
+      </div>
+      <div className="space-y-2">
+        <Label>Inscrição Estadual</Label>
+        <Combobox
+          options={stateRegistrations.map((registration) => ({
+            value: registration.id,
+            label: [registration.state_registration, registration.farm_name].filter(Boolean).join(' - '),
+            keywords: [registration.state_registration, registration.farm_name, registration.description].filter(Boolean) as string[],
+          }))}
+          value={watch('farm_state_registration_id')}
+          onValueChange={(v) => setValue('farm_state_registration_id', v)}
+          placeholder={ownerId ? 'Selecione a inscrição estadual' : 'Selecione o produtor primeiro'}
+          searchPlaceholder="Buscar por inscrição ou fazenda..."
+          emptyText={stateRegistrationsLoading ? 'Carregando inscrições...' : 'Nenhuma inscrição ativa para este produtor'}
+          disabled={!ownerId || stateRegistrationsLoading}
+        />
+        {errors.farm_state_registration_id && <p className="text-sm text-destructive">{errors.farm_state_registration_id.message}</p>}
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">

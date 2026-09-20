@@ -22,8 +22,8 @@ class SupplierService {
     {
         // Persiste os dados no banco.
         return DB::transaction(function () use ($data): Supplier {
-            $typeSupplierIds = $data['typeSuppliers'] ?? [];
-            unset($data['typeSuppliers']);
+            $typeSupplierIds = $data['type_supplier_ids'];
+            unset($data['type_supplier_ids']);
 
             $supplier = Supplier::create($data);
             $supplier->types()->sync($typeSupplierIds);
@@ -36,9 +36,9 @@ class SupplierService {
     public function update(Supplier $item, array $data): Supplier
     {
         return DB::transaction(function () use ($item, $data): Supplier {
-            $hasTypeSuppliers = array_key_exists('typeSuppliers', $data);
-            $typeSupplierIds = $data['typeSuppliers'] ?? [];
-            unset($data['typeSuppliers']);
+            $hasTypeSuppliers = array_key_exists('type_supplier_ids', $data);
+            $typeSupplierIds = $data['type_supplier_ids'] ?? [];
+            unset($data['type_supplier_ids']);
 
             $item->update($data);
             if ($hasTypeSuppliers) {

@@ -63,6 +63,7 @@ export default function HarvestReleasesList() {
     { key: 'driver_name', label: 'Motorista', render: (i: HarvestRelease) => i.driver_name || driverMap.get(String(i.driver_id)) || '' },
     { key: 'driver_supplier_name', label: 'Fornecedor do Motorista', render: (i: HarvestRelease) => i.driver_supplier_name || '' },
     { key: 'owner_name', label: 'Produtor', render: (i: HarvestRelease) => i.owner_name || '' },
+    { key: 'state_registration', label: 'Inscrição Estadual', render: (i: HarvestRelease) => i.state_registration || '-' },
     { key: 'plot_field_name', label: 'Talhão', render: (i: HarvestRelease) => i.plot_field_name || i.plot_name || i.field_name || '' },
     { key: 'warehouse_name', label: 'Armazém', render: (i: HarvestRelease) => i.warehouse_name || '' },
     { key: 'lanyard_name', label: 'Colhedor', render: (i: HarvestRelease) => i.lanyard_name || i.lanyard_supplier_name || '' },
@@ -141,7 +142,7 @@ export default function HarvestReleasesList() {
         <DataTable
           data={data}
           columns={columns}
-          searchKeys={['crop_name', 'driver_name', 'shipping_number', 'control_number']}
+          searchKeys={['crop_name', 'driver_name', 'owner_name', 'state_registration', 'shipping_number', 'control_number']}
           searchPlaceholder="Buscar colheita..."
           actions={(item) => (
             <div className="flex items-center gap-1">

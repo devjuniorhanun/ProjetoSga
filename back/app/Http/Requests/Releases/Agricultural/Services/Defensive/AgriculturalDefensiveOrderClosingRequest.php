@@ -18,10 +18,14 @@ class AgriculturalDefensiveOrderClosingRequest extends FormRequest
     {
         // Retorna as regras do payload.
         return [
-            // Localiza a OS pelo número público.
-            'os_number' => ['required', 'integer', 'exists:agricultural_defensive_orders,os_number'],
-            // Localiza o tanque pelo identificador.
-            'operator_tank_id' => ['required', 'integer', 'exists:operator_tanks,id'],
+            // Contrato oficial: número público da OS. Aceita ausência quando o
+            // cliente legado ainda envia o identificador interno em order_id.
+            'os_number' => ['nullable', 'required_without:order_id', 'integer', 'exists:agricultural_defensive_orders,os_number'],
+            // Compatibilidade temporária com o frontend atual.
+            'order_id' => ['nullable', 'required_without:os_number', 'integer', 'exists:agricultural_defensive_orders,id'],
+            // No contrato oficial é o tanque. No payload legado este campo
+            // recebe o id do tanqueiro e será resolvido pelo service.
+            'operator_tank_id' => ['required', 'integer'],
             // Guarda somente as bombas deste fechamento.
             'closing_bomb' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
             // Define parcial ou final.
@@ -55,6 +59,8 @@ class AgriculturalDefensiveOrderClosingRequest extends FormRequest
         return [
             // Número da OS.
             'os_number' => 'número da OS',
+            // Identificador interno legado.
+            'order_id' => 'ordem de serviço',
             // Tanque.
             'operator_tank_id' => 'tanque do operador',
             // Bombas do evento.

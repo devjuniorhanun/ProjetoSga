@@ -7,6 +7,7 @@ import api from './api';
 
 export const HARVEST_RELEASES_ENDPOINT = '/releases/harvest/harvest-releases';
 export const HARVEST_PLOT_FIELDS_ENDPOINT = '/releases/harvest/plot-fields';
+export const HARVEST_STATE_REGISTRATIONS_ENDPOINT = '/releases/harvest/state-registrations';
 export const HARVEST_MATRIX_FREIGHT_ENDPOINT = '/releases/harvest/matrix-freight';
 export const HARVEST_ADVANCES_ENDPOINT = '/releases/financial/advances/harvest';
 export const HARVEST_ELIGIBLE_HARVESTERS_ENDPOINT =
@@ -20,6 +21,7 @@ export interface HarvestRelease {
   crop_id: string;
   driver_id: string;
   owner_id: string;
+  farm_state_registration_id: string;
   plot_field_id: string;
   warehouse_id: string;
   lanyard_id: string;
@@ -40,6 +42,7 @@ export interface HarvestRelease {
   driver_name?: string;
   driver_supplier_name?: string;
   owner_name?: string;
+  state_registration?: string;
   plot_field_name?: string;
   plot_name?: string;
   field_name?: string;
@@ -53,6 +56,7 @@ export interface HarvestReleasePayload {
   crop_id: string;
   driver_id: string;
   owner_id: string;
+  farm_state_registration_id: string;
   plot_field_id: string;
   warehouse_id: string;
   lanyard_id: string;
@@ -85,6 +89,15 @@ export interface HarvestMatrixFreight {
   block: string;
   warehouse_name: string;
   route: string;
+}
+
+export interface HarvestStateRegistration {
+  id: string;
+  producer_id: string;
+  farm_id: string;
+  farm_name: string;
+  state_registration: string;
+  description?: string | null;
 }
 
 export type HarvestAdvanceType = 'HARVESTER' | 'TRANSPORTER';
@@ -196,6 +209,13 @@ export const harvestPlotFieldsService = {
   },
 };
 
+export const harvestStateRegistrationsService = {
+  byOwner: async (ownerId: string): Promise<HarvestStateRegistration[]> => {
+    const { data } = await api.get(HARVEST_STATE_REGISTRATIONS_ENDPOINT, { params: { owner_id: ownerId } });
+    return unwrapList<HarvestStateRegistration>(data);
+  },
+};
+
 export const harvestMatrixFreightService = {
   find: async (
     cropId: string,
@@ -244,4 +264,3 @@ export const harvestAdvancesService = {
     return unwrapList<TransporterSupplierSummary>(data);
   },
 };
-

@@ -9,7 +9,7 @@ class HarvestRelease extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['crop_id','driver_id','owner_id','plot_field_id','warehouse_id','lanyard_id','matrix_freight_id','release_date','shipping_number','control_number','gross_weight','discount_weight','discount','net_weight','liquid_bags','gross_bags','shipping_value','status','created_by'];
+    protected $fillable = ['crop_id','driver_id','owner_id','farm_state_registration_id','plot_field_id','warehouse_id','lanyard_id','matrix_freight_id','release_date','shipping_number','control_number','gross_weight','discount_weight','discount','net_weight','liquid_bags','gross_bags','shipping_value','status','created_by'];
 
     protected function casts(): array
     {

@@ -181,7 +181,6 @@ export const grainSupportService = {
   stateRegistrations: async (params: {
     producer_id?: string;
     farm_id?: string;
-    culture_id?: string;
   }): Promise<FarmStateRegistration[]> =>
     farmStateRegistrationsService.getAll({ ...params, status: 'A' }),
   storageLocations: async (warehouseId: string): Promise<GrainStorageLocation[]> =>

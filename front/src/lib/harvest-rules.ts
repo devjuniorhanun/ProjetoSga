@@ -60,6 +60,7 @@ export function buildHarvestReleasePayload(
     crop_id: values.crop_id,
     driver_id: values.driver_id,
     owner_id: values.owner_id,
+    farm_state_registration_id: values.farm_state_registration_id,
     plot_field_id: values.plot_field_id,
     warehouse_id: values.warehouse_id,
     lanyard_id: values.lanyard_id,
