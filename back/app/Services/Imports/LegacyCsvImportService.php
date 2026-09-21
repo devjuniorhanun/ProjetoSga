@@ -1361,16 +1361,14 @@ class LegacyCsvImportService
             return null;
         }
 
-        $ids = DB::table('farm_state_registrations as fsr')
-            ->join('farms as f', 'f.id', '=', 'fsr.farm_id')
-            ->whereColumn('fsr.producer_id', 'f.producer_id')
-            ->where('fsr.farm_id', $farmId)
-            ->where('fsr.status', 'A')
-            ->whereNull('fsr.deleted_at')
-            ->whereNull('f.deleted_at')
-            ->pluck('fsr.id');
+        $stateRegistrationId = DB::table('farm_state_registrations')
+            ->where('farm_id', $farmId)
+            ->where('status', 'A')
+            ->whereNull('deleted_at')
+            ->orderBy('id')
+            ->value('id');
 
-        return $ids->count() === 1 ? (int) $ids->first() : null;
+        return $stateRegistrationId ? (int) $stateRegistrationId : null;
     }
 
     // Importa o livro financeiro antigo diretamente para PayAccount.
