@@ -390,6 +390,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/crops/{crop}/tank-operators/{operator}/open-dates', [DefensiveServiceController::class, 'openTankDates']);
         // Etapa 3: consolida produtos, planejamento e saldo atual do tanque.
         Route::get('/crops/{crop}/tank-operators/{operator}/planning', [DefensiveServiceController::class, 'tankPlanning']);
+        // Consolida retiradas, utilizações, devoluções e saldo por produto na safra.
+        Route::get('/crops/{crop}/tank-operators/{operator}/consolidation', [DefensiveServiceController::class, 'tankConsolidation']);
         // Etapa 3: retirada consolidada do estoque físico para o tanque.
         Route::post('/tank/withdrawal', [DefensiveServiceController::class, 'tankWithdrawal']);
         Route::post('/tank/withdrawals', [DefensiveServiceController::class, 'tankWithdrawal']);

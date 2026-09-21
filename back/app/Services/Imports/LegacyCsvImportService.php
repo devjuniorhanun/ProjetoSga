@@ -1363,8 +1363,6 @@ class LegacyCsvImportService
 
         $stateRegistrationId = DB::table('farm_state_registrations')
             ->where('farm_id', $farmId)
-            ->where('status', 'A')
-            ->whereNull('deleted_at')
             ->orderBy('id')
             ->value('id');
 

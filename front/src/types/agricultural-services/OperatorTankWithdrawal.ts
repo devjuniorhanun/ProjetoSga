@@ -28,6 +28,10 @@ export interface OperatorTankWithdrawal {
   status: string;
   items_count: number;
   items: OperatorTankWithdrawalItem[];
+  fields: Array<{
+    id: number | string;
+    name: string;
+  }>;
 }
 
 export interface OperatorTankWithdrawalRequest {

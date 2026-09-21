@@ -649,6 +649,96 @@ class AgriculturalDefensiveOrderService
             ->get();
     }
 
+    /**
+     * Consolida as movimentações do tanqueiro dentro de uma safra.
+     * Os fechamentos parciais e finais são contabilizados pelos movimentos USAGE.
+     */
+    public function tankConsolidation(int $cropId, int $operatorId): array
+    {
+        Crop::query()->findOrFail($cropId);
+        AgriculturalOperator::query()->findOrFail($operatorId);
+
+        $withdrawn = DB::table('operator_tank_withdrawal_items as item')
+            ->join('operator_tank_withdrawals as withdrawal', 'withdrawal.id', '=', 'item.operator_tank_withdrawal_id')
+            ->join('operator_tanks as tank', 'tank.id', '=', 'withdrawal.operator_tank_id')
+            ->where('withdrawal.crop_id', $cropId)
+            ->where('withdrawal.status', 'A')
+            ->where('tank.operator_id', $operatorId)
+            ->groupBy('item.product_id')
+            ->selectRaw('item.product_id, SUM(item.quantity) as total')
+            ->pluck('total', 'item.product_id');
+
+        $used = DB::table('operator_tank_movements as movement')
+            ->join('operator_tanks as tank', 'tank.id', '=', 'movement.operator_tank_id')
+            ->join('agricultural_defensive_orders as orders', 'orders.id', '=', 'movement.order_id')
+            ->where('movement.movement_type', 'USAGE')
+            ->where('orders.crop_id', $cropId)
+            ->where('tank.operator_id', $operatorId)
+            ->groupBy('movement.product_id')
+            ->selectRaw('movement.product_id, SUM(movement.quantity) as total')
+            ->pluck('total', 'movement.product_id');
+
+        $cropTankIds = DB::table('operator_tank_withdrawals as withdrawal')
+            ->join('operator_tanks as tank', 'tank.id', '=', 'withdrawal.operator_tank_id')
+            ->where('withdrawal.crop_id', $cropId)
+            ->where('withdrawal.status', 'A')
+            ->where('tank.operator_id', $operatorId)
+            ->pluck('withdrawal.operator_tank_id')
+            ->unique()
+            ->values();
+
+        $returned = $cropTankIds->isEmpty()
+            ? collect()
+            : DB::table('operator_tank_movements')
+                ->whereIn('operator_tank_id', $cropTankIds)
+                ->where('movement_type', 'RETURN')
+                ->groupBy('product_id')
+                ->selectRaw('product_id, SUM(quantity) as total')
+                ->pluck('total', 'product_id');
+
+        $latestTankId = OperatorTank::query()
+            ->where('operator_id', $operatorId)
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->value('id');
+
+        $balances = $latestTankId
+            ? OperatorTankProduct::query()
+                ->where('operator_tank_id', $latestTankId)
+                ->pluck('current_quantity', 'product_id')
+            : collect();
+
+        $productIds = collect($withdrawn->keys())
+            ->merge($used->keys())
+            ->merge($returned->keys())
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $products = Product::query()
+            ->whereIn('id', $productIds)
+            ->get(['id', 'name', 'unit'])
+            ->keyBy('id');
+
+        return $productIds
+            ->map(function (int $productId) use ($products, $withdrawn, $used, $returned, $balances): array {
+                $product = $products->get($productId);
+
+                return [
+                    'product_id' => $productId,
+                    'product_name' => $product?->name ?? "Produto {$productId}",
+                    'unit' => $product?->unit,
+                    'withdrawn_quantity' => round((float) ($withdrawn[$productId] ?? 0), 3),
+                    'used_quantity' => round((float) ($used[$productId] ?? 0), 3),
+                    'current_quantity' => round((float) ($balances[$productId] ?? 0), 3),
+                    'returned_quantity' => round((float) ($returned[$productId] ?? 0), 3),
+                ];
+            })
+            ->sortBy('product_name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values()
+            ->all();
+    }
+
     public function withdrawal(OperatorTankWithdrawal $withdrawal): OperatorTankWithdrawal
     {
         return $withdrawal->load(['crop', 'tank.operator.supplier', 'creator', 'items.product']);

@@ -23,20 +23,20 @@ export default function DefensiveConsolidationPage() {
     enabled: !!cropId,
   });
 
-  const { data: tank, isFetching } = useQuery({
-    queryKey: ['operator-tank', operatorId],
-    queryFn: () => agriculturalServicesDefensiveService.getOperatorTank(operatorId),
-    enabled: !!operatorId,
+  const { data: products = [], isFetching } = useQuery({
+    queryKey: ['operator-tank-consolidation', cropId, operatorId],
+    queryFn: () => agriculturalServicesDefensiveService.getTankConsolidation(cropId, operatorId),
+    enabled: !!cropId && !!operatorId,
   });
 
   const rows = useMemo(
     () =>
-      (tank?.products ?? []).map((p) => {
+      products.map((p) => {
         const expected = Number(p.used_quantity) + Number(p.current_quantity) + Number(p.returned_quantity);
         const difference = Number((Number(p.withdrawn_quantity) - expected).toFixed(4));
         return { ...p, expected, difference, divergence: difference !== 0 };
       }),
-    [tank],
+    [products],
   );
 
   const hasDivergence = rows.some((r) => r.divergence);

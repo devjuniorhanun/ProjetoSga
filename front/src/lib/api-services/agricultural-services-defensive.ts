@@ -98,6 +98,16 @@ export const agriculturalServicesDefensiveService = {
     return unwrap<TankPlanning>(data);
   },
 
+  getTankConsolidation: async (
+    cropId: number | string,
+    operatorId: number | string,
+  ): Promise<OperatorTank['products']> => {
+    const { data } = await api.get(
+      `${BASE}/crops/${cropId}/tank-operators/${operatorId}/consolidation`,
+    );
+    return unwrapList<OperatorTank['products'][number]>(data);
+  },
+
   getOrders: async (params?: Record<string, unknown>): Promise<AgriculturalDefensiveOrder[]> => {
     const { data } = await api.get(`${BASE}/orders`, { params });
     return unwrapList<AgriculturalDefensiveOrder>(data);

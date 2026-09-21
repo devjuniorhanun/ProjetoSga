@@ -273,9 +273,15 @@
 
   body:has(.defensive-order-page) > #root > div > aside,
   body:has(.defensive-order-page) nav,
+  body:has(.defensive-order-page) main > div > div:first-child,
   body:has(.defensive-order-page) .defensive-order-actions,
   body:has(.defensive-order-page) [role="dialog"] {
     display: none !important;
+  }
+
+  body:has(.defensive-order-page) .animate-fade-in {
+    animation: none !important;
+    opacity: 1 !important;
   }
 
   body:has(.defensive-order-page) > #root > div,

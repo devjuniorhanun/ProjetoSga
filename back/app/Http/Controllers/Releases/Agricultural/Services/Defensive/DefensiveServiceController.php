@@ -119,6 +119,13 @@ class DefensiveServiceController extends Controller
         ]);
     }
 
+    public function tankConsolidation(int $crop, int $operator)
+    {
+        return response()->json([
+            'data' => $this->service->tankConsolidation($crop, $operator),
+        ]);
+    }
+
     public function tankWithdrawal(OperatorTankWithdrawalRequest $request)
     {
         try {

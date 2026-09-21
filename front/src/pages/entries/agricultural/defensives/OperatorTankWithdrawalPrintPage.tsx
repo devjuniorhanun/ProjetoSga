@@ -110,6 +110,13 @@ export default function OperatorTankWithdrawalPrintPage() {
           </div>
         </section>
 
+        <section className="mt-4 text-sm">
+          <p className="font-bold">Talhões que fazem parte da retirada</p>
+          <div className="mt-1 min-h-10 rounded border border-slate-900 p-2">
+            {(withdrawal.fields ?? []).map((field) => field.name).join(', ') || 'Nenhum talhão informado.'}
+          </div>
+        </section>
+
         <section className="mt-16 grid grid-cols-2 gap-16 text-center text-xs">
           <div className="border-t border-slate-900 pt-2">Responsável pela retirada</div>
           <div className="border-t border-slate-900 pt-2">Tanqueiro</div>

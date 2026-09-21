@@ -400,8 +400,12 @@ export default function OperatorTankPage() {
                 <p><span className="text-muted-foreground">Tanqueiro:</span> {detail.operator_name ?? '-'}</p>
                 <p><span className="text-muted-foreground">Data de corte:</span> {detail.cutoff_date ? formatDate(detail.cutoff_date) : '-'}</p>
                 <p><span className="text-muted-foreground">Retirada em:</span> {formatDateTime(detail.occurred_at)}</p>
-                <p><span className="text-muted-foreground">Responsável:</span> {detail.created_by_name ?? '-'}</p>
                 <p><span className="text-muted-foreground">Observação:</span> {detail.observation ?? '-'}</p>
+                <p className="sm:col-span-2">
+                  <span className="text-muted-foreground">Talhões:</span>{' '}
+                  {(detail.fields ?? []).map((field) => field.name).join(', ') || '-'}
+                </p>
+                <p><span className="text-muted-foreground">Responsável:</span> {detail.created_by_name ?? '-'}</p>
               </div>
               <div className="overflow-x-auto rounded-md border">
                 <Table>
