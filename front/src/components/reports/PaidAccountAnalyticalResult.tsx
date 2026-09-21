@@ -124,6 +124,14 @@ export function PaidAccountAnalyticalResult({ report }: Props) {
                                   <TableCell className="text-right">{formatCurrencyBRL(item.value)}</TableCell>
                                 </TableRow>
                               ))}
+                              <TableRow className="bg-muted/50 font-semibold">
+                                <TableCell colSpan={12} className="text-right">
+                                  Total do fornecedor:
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatCurrencyBRL(supplier.total)}
+                                </TableCell>
+                              </TableRow>
                             </TableBody>
                           </Table>
                         </div>

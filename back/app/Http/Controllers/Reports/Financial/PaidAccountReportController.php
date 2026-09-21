@@ -60,6 +60,16 @@ class PaidAccountReportController extends Controller
                         'description' => $item['description'],
                     ];
                 }
+                $rows[] = [
+                    'supplier' => '',
+                    'cost_center' => '',
+                    'document' => '',
+                    'date' => '',
+                    'due' => 'Total:',
+                    'value' => $this->currency($supplier['total']),
+                    'description' => '',
+                    '_subtotal' => true,
+                ];
             }
         }
         $columns = [
@@ -95,6 +105,16 @@ class PaidAccountReportController extends Controller
                         'description' => $item['description'],
                     ];
                 }
+                $rows[] = [
+                    'supplier' => '',
+                    'cost_center' => '',
+                    'document' => '',
+                    'date' => '',
+                    'due' => 'Total:',
+                    'value' => $this->currency($supplier['total']),
+                    'description' => '',
+                    '_subtotal' => true,
+                ];
             }
         }
         $columns = [
@@ -106,10 +126,15 @@ class PaidAccountReportController extends Controller
             ['key' => 'value', 'label' => 'Valor', 'width' => 82, 'chars' => 16],
             ['key' => 'description', 'label' => 'Descrição', 'width' => 205, 'chars' => 42],
         ];
+        $summary = [];
+        foreach ($report['sections'] as $section) {
+            $summary[$section['name'].' ('.$section['payments_count'].' pagamento(s))'] = $this->currency($section['total']);
+        }
+        $summary['Total geral'] = $this->currency($report['summary']['grand_total']);
 
         return $this->pdfResponse('contas-pagas-analitico.pdf', $this->pdf->render(
             'Relatório Analítico de Contas Pagas', $this->subtitle($report), $columns, $rows,
-            ['Total geral' => $this->currency($report['summary']['grand_total'])]
+            $summary
         ));
     }
 

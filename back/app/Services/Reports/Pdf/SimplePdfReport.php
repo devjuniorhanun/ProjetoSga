@@ -39,11 +39,16 @@ class SimplePdfReport
         $y -= 22;
 
         foreach ($rows as $row) {
+            $subtotal = (bool) ($row['_subtotal'] ?? false);
+            if ($subtotal) {
+                $commands[] = '0.94 0.96 0.95 rg 32 '.($y - 5).' 778 16 re f';
+            }
             $x = 38;
             foreach ($columns as $column) {
                 $value = (string) ($row[$column['key']] ?? '');
                 $value = mb_strimwidth($value, 0, $column['chars'], '...');
-                $commands[] = '0.12 0.16 0.14 rg BT /F1 6.6 Tf '.$x.' '.$y.' Td '.$this->text($value).' ET';
+                $font = $subtotal ? '/F2' : '/F1';
+                $commands[] = '0.12 0.16 0.14 rg BT '.$font.' 6.6 Tf '.$x.' '.$y.' Td '.$this->text($value).' ET';
                 $x += $column['width'];
             }
             $commands[] = '0.85 0.88 0.86 RG 32 '.($y - 5).' m 810 '.($y - 5).' l S';
