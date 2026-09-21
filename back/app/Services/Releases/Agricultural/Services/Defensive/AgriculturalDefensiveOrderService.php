@@ -95,7 +95,7 @@ class AgriculturalDefensiveOrderService
         // Consulta as OS em ordem decrescente.
         return AgriculturalDefensiveOrder::query()
             // Carrega os dados necessários para o frontend.
-            ->with(['field', 'crop', 'culture', 'typeOperation', 'products.product', 'operators.operator.supplier', 'operators.fleet', 'operatorProducts.product', 'operatorProducts.order.products', 'operatorProducts.orderOperator.operator.supplier', 'closings.movements.product', 'closings'])
+            ->with(['field', 'crop', 'culture', 'typeOperation', 'products.product', 'operators.operator.supplier', 'operators.fleet', 'operatorProducts.product', 'operatorProducts.order.products', 'operatorProducts.orderOperator.operator.supplier', 'closings.movements.product', 'closings', 'previousOrders.previousOrder'])
             // Ordena pelas mais recentes.
             ->orderByDesc('id')
             // Retorna os registros.
@@ -186,6 +186,7 @@ class AgriculturalDefensiveOrderService
                 'recommended_pump' => $recommendedPump,
                 'flow' => $data['flow'],
                 'pump_capacity' => $data['pump_capacity'],
+                'observation' => $data['observation'] ?? $order->observation,
                 'status' => $data['status'] ?? $order->status,
             ]);
 
@@ -267,12 +268,46 @@ class AgriculturalDefensiveOrderService
                 }
             }
 
+            if (array_key_exists('previous_os', $data)) {
+                $previousOrders = [];
+                foreach ($data['previous_os'] as $previous) {
+                    $previousOrder = AgriculturalDefensiveOrder::query()
+                        ->where('os_number', $previous['os_number'])
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    if ((int) $previousOrder->id === (int) $order->id) {
+                        throw new RuntimeException('Uma O.S. não pode ser relacionada como anterior dela mesma.');
+                    }
+
+                    $previousOrders[] = [
+                        'order_id' => $order->id,
+                        'previous_order_id' => $previousOrder->id,
+                        'quantity_used' => round((float) $previous['quantity_used'], 3),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                AgriculturalDefensiveOrderPreviousOrder::query()
+                    ->where('order_id', $order->id)
+                    ->delete();
+                if ($previousOrders !== []) {
+                    AgriculturalDefensiveOrderPreviousOrder::query()->insert($previousOrders);
+                }
+            }
+
             return $this->find($order->refresh());
         });
     }
 
     // Cria uma única OS para um único talhão.
-    private function createSingleOrder(array $data, array $fieldData, ?int $parentOrderId): AgriculturalDefensiveOrder
+    private function createSingleOrder(
+        array $data,
+        array $fieldData,
+        ?int $parentOrderId,
+        bool $validateAvailableArea = true
+    ): AgriculturalDefensiveOrder
     {
         // Bloqueia o talhão durante a validação da área para evitar corrida concorrente.
         $field = Field::query()->lockForUpdate()->findOrFail($fieldData['field_id']);
@@ -286,7 +321,7 @@ class AgriculturalDefensiveOrderService
         // Calcula a área que ainda está disponível.
         $availableArea = (float) $field->area - $usedArea;
         // Impede que o frontend ultrapasse a área disponível real.
-        if ($requestedArea > $availableArea + 0.0000001) {
+        if ($validateAvailableArea && $requestedArea > $availableArea + 0.0000001) {
             throw new RuntimeException("A área solicitada para o talhão {$field->name} excede a área disponível de {$availableArea}.");
         }
         // Cria a OS sem número para que o ID possa definir o número de forma segura.
@@ -317,6 +352,8 @@ class AgriculturalDefensiveOrderService
             'pump_capacity' => $data['pump_capacity'],
             // Inicia as bombas reais em zero.
             'used_bomb' => 0,
+            // Guarda a observação informada ou gerada pela reemissão.
+            'observation' => $data['observation'] ?? null,
             // Usa o status informado ou ativo.
             'status' => $data['status'] ?? 'A',
         ]);
@@ -405,38 +442,109 @@ class AgriculturalDefensiveOrderService
     // Cria ordens filhas durante uma edição/reemissão.
     public function reissue(AgriculturalDefensiveOrder $parent, array $data): array
     {
-        // Executa tudo em uma transação.
         return DB::transaction(function () use ($parent, $data): array {
-            // Bloqueia a OS pai durante a operação.
-            $parent = AgriculturalDefensiveOrder::query()->lockForUpdate()->findOrFail($parent->id);
-            // Cria uma lista de filhas.
+            $parent = AgriculturalDefensiveOrder::query()
+                ->with('field')
+                ->lockForUpdate()
+                ->findOrFail($parent->id);
+
+            if ($parent->status !== 'A') {
+                throw new RuntimeException('Somente uma O.S. aberta pode gerar ordens filhas.');
+            }
+
+            if (empty($data['previous_os'])) {
+                throw new RuntimeException('Informe pelo menos uma O.S. anterior para realizar a reemissão.');
+            }
+
             $children = [];
-            // O array fields continua sendo a seleção do frontend.
-            foreach ($data['fields'] as $fieldData) {
-                // Cria uma nova OS filha para cada talhão selecionado.
-                $child = $this->createSingleOrder($data, $fieldData, $parent->id);
-                // Percorre as OS antigas informadas na edição.
-                foreach ($data['previous_os'] ?? [] as $previous) {
-                    // Localiza a OS antiga pelo número público.
-                    $previousOrder = AgriculturalDefensiveOrder::query()->where('os_number', $previous['os_number'])->lockForUpdate()->first();
-                    // Interrompe se a OS informada não existir.
-                    if (!$previousOrder) {
-                        throw new RuntimeException("A OS anterior {$previous['os_number']} não foi encontrada.");
-                    }
-                    // Registra a ligação da filha com a OS anterior.
-                    AgriculturalDefensiveOrderPreviousOrder::create([
-                        // Guarda a nova filha.
-                        'order_id' => $child->id,
-                        // Guarda a OS anterior.
-                        'previous_order_id' => $previousOrder->id,
-                        // Guarda as bombas utilizadas da OS anterior.
-                        'quantity_used' => $previous['quantity_used'],
-                    ]);
+            $parentTrace = [];
+
+            // Cada ocorrência informada gera uma filha independente.
+            foreach ($data['previous_os'] as $previous) {
+                $previousOrder = AgriculturalDefensiveOrder::query()
+                    ->with(['products', 'operators'])
+                    ->where('os_number', $previous['os_number'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ((int) $previousOrder->id === (int) $parent->id) {
+                    throw new RuntimeException('A O.S. pai não pode ser usada como O.S. anterior dela mesma.');
                 }
-                // Adiciona a filha à resposta.
+
+                $quantityUsed = round((float) $previous['quantity_used'], 3);
+                if ($quantityUsed <= 0) {
+                    throw new RuntimeException("A quantidade usada da O.S. {$previousOrder->os_number} deve ser maior que zero.");
+                }
+
+                $tankOperators = $previousOrder->operators
+                    ->where('function', 'T')
+                    ->values();
+                if ($tankOperators->isEmpty()) {
+                    throw new RuntimeException("A O.S. anterior {$previousOrder->os_number} não possui tanqueiro.");
+                }
+                if ($previousOrder->products->isEmpty()) {
+                    throw new RuntimeException("A O.S. anterior {$previousOrder->os_number} não possui produtos.");
+                }
+
+                $pumpCapacity = round((float) $previousOrder->pump_capacity, 3);
+                $childArea = round($quantityUsed * $pumpCapacity, 3);
+                $fieldName = $parent->field?->name ?: (string) $parent->field_id;
+                $childObservation = sprintf(
+                    'O.S. filha da O.S. %s, gerada a partir da O.S. anterior %s, no talhão %s.',
+                    $parent->os_number,
+                    $previousOrder->os_number,
+                    $fieldName
+                );
+
+                $childData = [
+                    'crop_id' => $parent->crop_id,
+                    'culture_id' => $parent->culture_id,
+                    'type_operation_id' => $parent->type_operation_id,
+                    'application_date' => $parent->application_date?->format('Y-m-d'),
+                    'pump_volume' => $previousOrder->pump_volume,
+                    'flow' => $previousOrder->flow,
+                    'pump_capacity' => $pumpCapacity,
+                    'status' => 'A',
+                    'observation' => $childObservation,
+                    'operators' => $tankOperators->map(fn ($operator): array => [
+                        'operator_id' => $operator->operator_id,
+                        'fleet_id' => $operator->fleet_id,
+                        'function' => 'T',
+                    ])->all(),
+                    'products' => $previousOrder->products->map(fn ($product): array => [
+                        'product_id' => $product->product_id,
+                        'dose' => $product->dose,
+                        'pump' => $product->pump,
+                    ])->all(),
+                ];
+
+                // A filha representa reaplicação no mesmo talhão da pai; por
+                // isso não consome uma nova área disponível do cadastro.
+                $child = $this->createSingleOrder($childData, [
+                    'field_id' => $parent->field_id,
+                    'area' => $childArea,
+                ], $parent->id, false);
+
+                AgriculturalDefensiveOrderPreviousOrder::create([
+                    'order_id' => $child->id,
+                    'previous_order_id' => $previousOrder->id,
+                    'quantity_used' => $quantityUsed,
+                ]);
+
+                $parentTrace[] = sprintf(
+                    'O.S. filha %s (O.S. anterior %s, talhão %s)',
+                    $child->os_number,
+                    $previousOrder->os_number,
+                    $fieldName
+                );
                 $children[] = $child;
             }
-            // Retorna as filhas completas.
+
+            $trace = 'Ordens filhas geradas: '.implode('; ', $parentTrace).'.';
+            $parent->update([
+                'observation' => trim(implode("\n", array_filter([$parent->observation, $trace]))),
+            ]);
+
             return array_map(fn (AgriculturalDefensiveOrder $order) => $this->find($order), $children);
         });
     }

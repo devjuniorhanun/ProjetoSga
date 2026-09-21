@@ -43,6 +43,8 @@ return new class extends Migration
             $table->decimal('pump_capacity', 12, 3);
             // Guarda o total real acumulado de bombas utilizadas.
             $table->decimal('used_bomb', 12, 3)->default(0);
+            // Guarda observações operacionais e a rastreabilidade entre O.S. pai e filhas.
+            $table->text('observation')->nullable();
             // Guarda o status operacional da OS.
             $table->string('status', 1)->default('A');
             // Registra criação e atualização.

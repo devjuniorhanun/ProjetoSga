@@ -46,6 +46,8 @@ class AgriculturalDefensiveOrderResource extends JsonResource
             'pump_capacity' => $this->pump_capacity,
             // Bombas realmente usadas acumuladas.
             'used_bomb' => round((float) $this->used_bomb, 3),
+            // Observação operacional e rastreabilidade.
+            'observation' => $this->observation,
             // Status.
             'status' => $this->status,
             // Talhão quando carregado.
@@ -61,6 +63,8 @@ class AgriculturalDefensiveOrderResource extends JsonResource
             'child_orders' => self::collection($this->whenLoaded('childOrders')),
             // Referências a ordens anteriores quando carregadas.
             'previous_orders' => AgriculturalDefensiveOrderPreviousOrderResource::collection($this->whenLoaded('previousOrders')),
+            // Alias mantido para o contrato utilizado no formulário de edição.
+            'previous_os' => AgriculturalDefensiveOrderPreviousOrderResource::collection($this->whenLoaded('previousOrders')),
             // Registra criação.
             'created_at' => $this->created_at?->toISOString(),
             // Registra atualização.

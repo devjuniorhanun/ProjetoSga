@@ -22,6 +22,8 @@ class AgriculturalDefensiveOrderPreviousOrderResource extends JsonResource
             'previous_order_id' => $this->previous_order_id,
             // Número da OS anterior quando carregada.
             'previous_os_number' => $this->whenLoaded('previousOrder', fn () => $this->previousOrder->os_number),
+            // Alias utilizado pelo formulário de edição.
+            'os_number' => $this->whenLoaded('previousOrder', fn () => $this->previousOrder->os_number),
             // Bombas usadas da OS anterior.
             'quantity_used' => $this->quantity_used,
         ];

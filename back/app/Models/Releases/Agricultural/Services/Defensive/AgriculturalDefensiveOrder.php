@@ -60,6 +60,8 @@ class AgriculturalDefensiveOrder extends Model
         'pump_capacity',
         // Guarda o total real acumulado de bombas.
         'used_bomb',
+        // Guarda observações e rastreabilidade da O.S.
+        'observation',
         // Guarda o status.
         'status',
     ];

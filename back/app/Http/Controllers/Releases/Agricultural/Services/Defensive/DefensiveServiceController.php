@@ -65,8 +65,20 @@ class DefensiveServiceController extends Controller
 
     public function reissue(AgriculturalDefensiveOrder $order, AgriculturalDefensiveOrderRequest $request)
     {
-        $children = $this->service->reissue($order, array_merge($request->validated(), ['previous_os' => $request->input('previous_os', [])]));
-        return response()->json(['data' => AgriculturalDefensiveOrderResource::collection(collect($children))], 201);
+        try {
+            $children = $this->service->reissue(
+                $order,
+                array_merge($request->validated(), ['previous_os' => $request->input('previous_os', [])])
+            );
+            return response()->json([
+                'data' => AgriculturalDefensiveOrderResource::collection(collect($children)),
+            ], 201);
+        } catch (RuntimeException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => ['previous_os' => [$exception->getMessage()]],
+            ], 422);
+        }
     }
 
     public function close(AgriculturalDefensiveOrderClosingRequest $request)

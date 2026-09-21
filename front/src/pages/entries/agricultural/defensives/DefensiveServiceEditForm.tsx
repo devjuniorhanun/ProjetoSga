@@ -65,7 +65,7 @@ type ProductFormData = z.infer<typeof productSchema>;
 
 const previousOSSchema = z.object({
   os_number: z.string().min(1, 'Número de O.S obrigatório'),
-  quantity_used: z.coerce.number().min(0, 'Quantidade obrigatória'),
+  quantity_used: z.coerce.number().gt(0, 'A quantidade usada deve ser maior que zero'),
 });
 type PreviousOSFormData = z.infer<typeof previousOSSchema>;
 
@@ -682,7 +682,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
             </div>
             <div className="space-y-2">
               <Label>Quantidade Usada</Label>
-              <Input type="number" step="0.0001" {...previousOSForm.register('quantity_used')} />
+              <Input type="number" step="0.001" min="0.001" {...previousOSForm.register('quantity_used')} />
               {previousOSForm.formState.errors.quantity_used && <p className="text-sm text-destructive">{previousOSForm.formState.errors.quantity_used.message}</p>}
             </div>
             <div className="flex justify-end gap-2 pt-2">
@@ -710,7 +710,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
         open={showReissueDialog}
         onOpenChange={setShowReissueDialog}
         title="Confirmar reemissão"
-        description="Uma nova O.S. será criada vinculada a esta. Deseja continuar?"
+        description="Será criada uma O.S. filha para cada O.S. anterior informada, vinculada à O.S. aberta atual. Deseja continuar?"
         confirmLabel="Reemitir"
         confirmVariant="success"
         onConfirm={() => {

@@ -47,6 +47,8 @@ class AgriculturalDefensiveOrderRequest extends FormRequest
             'pump_capacity' => ['required', 'numeric', 'gt:0'],
             // Permite status somente A ou I.
             'status' => ['sometimes', Rule::in(['A', 'I'])],
+            // Observação operacional opcional.
+            'observation' => ['nullable', 'string', 'max:2000'],
             // Exige operadores.
             'operators' => ['required', 'array', 'min:1'],
             // Valida cada operador.
@@ -67,6 +69,15 @@ class AgriculturalDefensiveOrderRequest extends FormRequest
             'products.*.dose' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
             // Guarda a quantidade recomendada do produto por bomba.
             'products.*.pump' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
+            // Permite relacionar uma ou mais O.S. anteriores, inclusive repetidas.
+            'previous_os' => ['sometimes', 'array'],
+            'previous_os.*' => ['required', 'array'],
+            'previous_os.*.os_number' => [
+                'required',
+                'integer',
+                'exists:agricultural_defensive_orders,os_number',
+            ],
+            'previous_os.*.quantity_used' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
         ];
     }
 
@@ -183,6 +194,7 @@ class AgriculturalDefensiveOrderRequest extends FormRequest
             'flow' => 'vazão',
             // Nome da capacidade.
             'pump_capacity' => 'capacidade da bomba',
+            'observation' => 'observação',
             // Nome dos operadores.
             'operators' => 'operadores',
             // Nome do operador individual.
