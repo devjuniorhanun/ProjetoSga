@@ -46,19 +46,27 @@ set -a
 . ./scripts/load-env.sh
 set +a
 
-# Create a local HTTPS certificate only when it is missing or no longer
-# matches HTTPS_BIND_IP. The certificate is intentionally self-signed because
-# this stack is designed for an internal/private network.
+# Create a local HTTPS certificate only when the complete certificate/key pair
+# is missing, invalid, expired, mismatched or no longer matches HTTPS_BIND_IP.
+# The certificate is intentionally self-signed because this stack is designed
+# for an internal/private network.
 mkdir -p certs
 CERT_OK=0
-if [ -f certs/server.crt ] && openssl x509 -in certs/server.crt -noout >/dev/null 2>&1; then
-    if openssl x509 -in certs/server.crt -noout -checkip "${HTTPS_BIND_IP}" >/dev/null 2>&1; then
-        CERT_OK=1
+if [ -s certs/server.crt ] && [ -s certs/server.key ]; then
+    if openssl x509 -in certs/server.crt -noout -checkend 0 >/dev/null 2>&1 \
+        && openssl x509 -in certs/server.crt -noout -checkip "${HTTPS_BIND_IP}" >/dev/null 2>&1 \
+        && openssl pkey -in certs/server.key -noout >/dev/null 2>&1; then
+        CERT_PUBLIC_KEY="$(openssl x509 -in certs/server.crt -pubkey -noout 2>/dev/null || true)"
+        PRIVATE_PUBLIC_KEY="$(openssl pkey -in certs/server.key -pubout 2>/dev/null || true)"
+
+        if [ -n "${CERT_PUBLIC_KEY}" ] && [ "${CERT_PUBLIC_KEY}" = "${PRIVATE_PUBLIC_KEY}" ]; then
+            CERT_OK=1
+        fi
     fi
 fi
 
 if [ "${CERT_OK}" -eq 0 ]; then
-    echo "Gerando certificado HTTPS para ${HTTPS_BIND_IP}..."
+    echo "Certificado HTTPS ausente, inválido ou incompatível. Gerando um novo par para ${HTTPS_BIND_IP}..."
     openssl req \
         -x509 \
         -nodes \
@@ -72,7 +80,7 @@ if [ "${CERT_OK}" -eq 0 ]; then
     chmod 600 certs/server.key
     chmod 644 certs/server.crt
 else
-    echo "Certificado HTTPS existente e compatível com ${HTTPS_BIND_IP}."
+    echo "Certificado e chave HTTPS existentes, válidos e compatíveis com ${HTTPS_BIND_IP}."
 fi
 
 # The project is new: this is the only one-time ownership normalization.
