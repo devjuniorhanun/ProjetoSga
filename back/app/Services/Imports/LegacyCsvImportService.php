@@ -1297,7 +1297,7 @@ class LegacyCsvImportService
             $cropId = $this->resolveSeededCrop($row['safra_id'] ?? null);
             $ownerId = $this->resolve('owners', $row['proprietario_id'] ?? null);
             $farmId = $this->resolve('farms', $row['fazenda_id'] ?? null);
-            $stateRegistrationId = $this->resolveHarvestStateRegistration($ownerId, $farmId);
+            $stateRegistrationId = $this->resolveHarvestStateRegistration($farmId);
             $relations = [
                 'driver_id' => $this->resolve('drivers', $row['motorista_id'] ?? null),
                 'owner_id' => $ownerId,
@@ -1308,10 +1308,19 @@ class LegacyCsvImportService
                 'matrix_freight_id' => $this->resolve('matrix_freights', $row['matriz_frete_id'] ?? null),
             ];
             if (!$cropId || in_array(null, $relations, true)) {
+                $unresolvedRelations = array_keys(array_filter(
+                    array_merge(['crop_id' => $cropId], $relations),
+                    static fn ($id): bool => $id === null,
+                ));
+
                 if ($strict) {
-                    throw new RuntimeException("Lançamento de safra legado {$legacyId} possui relacionamento não resolvido, incluindo a inscrição estadual do produtor e da fazenda.");
+                    throw new RuntimeException(
+                        "Lançamento de safra legado {$legacyId} possui relacionamentos não resolvidos: "
+                        .implode(', ', $unresolvedRelations).'.',
+                    );
                 }
-                $this->warnings[] = "Lançamento de safra legado {$legacyId}: registro ignorado porque a inscrição estadual do produtor e da fazenda não pôde ser determinada de forma única.";
+                $this->warnings[] = "Lançamento de safra legado {$legacyId}: registro ignorado por relacionamentos não resolvidos: "
+                    .implode(', ', $unresolvedRelations).'.';
                 $this->count($batch, false);
                 continue;
             }
@@ -1346,19 +1355,19 @@ class LegacyCsvImportService
         }
     }
 
-    private function resolveHarvestStateRegistration(?int $ownerId, ?int $farmId): ?int
+    private function resolveHarvestStateRegistration(?int $farmId): ?int
     {
-        if (! $ownerId || ! $farmId) {
+        if (! $farmId) {
             return null;
         }
 
         $ids = DB::table('farm_state_registrations as fsr')
-            ->join('producers as p', 'p.id', '=', 'fsr.producer_id')
-            ->where('p.owner_id', $ownerId)
+            ->join('farms as f', 'f.id', '=', 'fsr.farm_id')
+            ->whereColumn('fsr.producer_id', 'f.producer_id')
             ->where('fsr.farm_id', $farmId)
             ->where('fsr.status', 'A')
             ->whereNull('fsr.deleted_at')
-            ->whereNull('p.deleted_at')
+            ->whereNull('f.deleted_at')
             ->pluck('fsr.id');
 
         return $ids->count() === 1 ? (int) $ids->first() : null;
