@@ -40,6 +40,20 @@ class DefensiveServiceController extends Controller
         return new AgriculturalDefensiveOrderResource($this->service->find($order));
     }
 
+    public function update(AgriculturalDefensiveOrderRequest $request, AgriculturalDefensiveOrder $order)
+    {
+        try {
+            return new AgriculturalDefensiveOrderResource(
+                $this->service->update($order, $request->validated())
+            );
+        } catch (RuntimeException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => ['order' => [$exception->getMessage()]],
+            ], 422);
+        }
+    }
+
     public function reorderProducts(
         AgriculturalDefensiveOrderProductSequenceRequest $request,
         AgriculturalDefensiveOrder $order

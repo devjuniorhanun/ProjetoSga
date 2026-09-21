@@ -126,6 +126,151 @@ class AgriculturalDefensiveOrderService
         });
     }
 
+    // Atualiza uma OS existente, preservando todo consumo já registrado nos fechamentos.
+    public function update(AgriculturalDefensiveOrder $order, array $data): AgriculturalDefensiveOrder
+    {
+        return DB::transaction(function () use ($order, $data): AgriculturalDefensiveOrder {
+            $order = AgriculturalDefensiveOrder::query()->lockForUpdate()->findOrFail($order->id);
+
+            if ($order->status !== 'A') {
+                throw new RuntimeException('Somente uma O.S. aberta pode ser alterada.');
+            }
+
+            if (count($data['fields']) !== 1) {
+                throw new RuntimeException('A alteração de uma O.S. deve informar exatamente um talhão.');
+            }
+
+            $fieldData = $data['fields'][0];
+            $field = Field::query()->lockForUpdate()->findOrFail($fieldData['field_id']);
+            $requestedArea = round((float) $fieldData['area'], 3);
+            $usedArea = (float) AgriculturalDefensiveOrder::query()
+                ->where('field_id', $field->id)
+                ->where('status', 'A')
+                ->where('id', '<>', $order->id)
+                ->sum('area');
+            $availableArea = round((float) $field->area - $usedArea, 3);
+
+            if ($requestedArea > $availableArea + 0.0000001) {
+                throw new RuntimeException("A área solicitada para o talhão {$field->name} excede a área disponível de {$availableArea}.");
+            }
+
+            $recommendedPump = round($requestedArea / (float) $data['pump_capacity'], 3);
+            $newTankOperatorIds = collect($data['operators'])
+                ->where('function', 'T')
+                ->pluck('operator_id')
+                ->map(fn ($id) => (int) $id)
+                ->unique();
+
+            if ($newTankOperatorIds->isEmpty()) {
+                throw new RuntimeException('A O.S. deve possuir pelo menos um operador com a função Tanqueiro.');
+            }
+
+            $closingOperatorIds = $order->closings()
+                ->join('operator_tanks', 'operator_tanks.id', '=', 'agricultural_defensive_order_closings.operator_tank_id')
+                ->pluck('operator_tanks.operator_id')
+                ->map(fn ($id) => (int) $id)
+                ->unique();
+
+            if ($closingOperatorIds->diff($newTankOperatorIds)->isNotEmpty()) {
+                throw new RuntimeException('Não é possível remover um tanqueiro que já possui fechamento registrado nesta O.S.');
+            }
+
+            $order->update([
+                'field_id' => $field->id,
+                'area' => $requestedArea,
+                'crop_id' => $data['crop_id'],
+                'culture_id' => $data['culture_id'],
+                'type_operation_id' => $data['type_operation_id'],
+                'application_date' => $data['application_date'],
+                'pump_volume' => $data['pump_volume'],
+                'recommended_pump' => $recommendedPump,
+                'flow' => $data['flow'],
+                'pump_capacity' => $data['pump_capacity'],
+                'status' => $data['status'] ?? $order->status,
+            ]);
+
+            $sortedProducts = collect($this->productSequenceService->sortForCreation($data['products']));
+            $requestedProductIds = $sortedProducts->pluck('product_id')->map(fn ($id) => (int) $id);
+            $existingProducts = $order->products()->lockForUpdate()->get()->keyBy('product_id');
+
+            foreach ($sortedProducts as $productData) {
+                $existingProduct = $existingProducts->get((int) $productData['product_id']);
+                if ($existingProduct
+                    && (float) $existingProduct->actual_quantity > 0
+                    && abs((float) $existingProduct->pump - (float) $productData['pump']) > 0.0000001) {
+                    throw new RuntimeException(
+                        "Não é possível alterar a quantidade por bomba do produto {$existingProduct->product_id}, pois ele já possui consumo registrado."
+                    );
+                }
+            }
+
+            foreach ($existingProducts as $existingProduct) {
+                if ($requestedProductIds->contains((int) $existingProduct->product_id)) {
+                    continue;
+                }
+                if ((float) $existingProduct->actual_quantity > 0) {
+                    throw new RuntimeException("Não é possível remover o produto {$existingProduct->product_id}, pois ele já possui consumo registrado.");
+                }
+                $existingProduct->delete();
+            }
+
+            foreach ($sortedProducts as $productData) {
+                $product = $existingProducts->get((int) $productData['product_id']);
+                $values = [
+                    'sequence' => $productData['sequence'],
+                    'dose' => $productData['dose'],
+                    'pump' => $productData['pump'],
+                    'recommended_quantity' => round((float) $productData['pump'] * $recommendedPump, 3),
+                ];
+
+                if ($product) {
+                    $product->update($values);
+                } else {
+                    AgriculturalDefensiveOrderProduct::create(array_merge($values, [
+                        'agricultural_defensive_order_id' => $order->id,
+                        'product_id' => $productData['product_id'],
+                        'used_bomb' => 0,
+                        'actual_quantity' => 0,
+                        'actual_dose' => null,
+                    ]));
+                }
+            }
+
+            // A associação operador/produto representa o planejamento atual e pode ser reconstruída.
+            AgriculturalDefensiveOrderOperatorProduct::query()
+                ->where('agricultural_defensive_order_id', $order->id)
+                ->delete();
+            $order->operators()->delete();
+
+            foreach ($data['operators'] as $operatorData) {
+                AgriculturalDefensiveOrderOperator::create([
+                    'agricultural_defensive_order_id' => $order->id,
+                    'operator_id' => $operatorData['operator_id'],
+                    'fleet_id' => $operatorData['fleet_id'] ?? null,
+                    'function' => $operatorData['function'],
+                ]);
+            }
+
+            $tankOperators = $order->operators()->where('function', 'T')->get();
+            $orderProducts = $order->products()->get();
+            foreach ($tankOperators as $tankOperator) {
+                foreach ($orderProducts as $orderProduct) {
+                    AgriculturalDefensiveOrderOperatorProduct::create([
+                        'agricultural_defensive_order_id' => $order->id,
+                        'agricultural_defensive_order_operator_id' => $tankOperator->id,
+                        'product_id' => $orderProduct->product_id,
+                        'dose' => $orderProduct->dose,
+                        'pump' => $orderProduct->pump,
+                        'area' => $requestedArea,
+                        'planned_quantity' => round((float) $orderProduct->pump * $recommendedPump, 3),
+                    ]);
+                }
+            }
+
+            return $this->find($order->refresh());
+        });
+    }
+
     // Cria uma única OS para um único talhão.
     private function createSingleOrder(array $data, array $fieldData, ?int $parentOrderId): AgriculturalDefensiveOrder
     {

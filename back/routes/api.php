@@ -402,6 +402,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/orders', [DefensiveServiceController::class, 'index']);
         // Cria uma OS por talhão recebido em fields[].
         Route::post('/orders', [DefensiveServiceController::class, 'store']);
+        // Atualiza uma OS aberta e sincroniza operadores e produtos planejados.
+        Route::match(['put', 'patch'], '/orders/{order}', [DefensiveServiceController::class, 'update']);
         // Realiza fechamento parcial ou final.
         Route::post('/orders/close', [DefensiveServiceController::class, 'close']);
         // Obtém ou cria o tanque diário do operador.
