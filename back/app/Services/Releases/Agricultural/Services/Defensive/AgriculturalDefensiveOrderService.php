@@ -656,7 +656,7 @@ class AgriculturalDefensiveOrderService
 
     public function openTankDates(int $cropId, int $operatorId)
     {
-        return AgriculturalDefensiveOrder::query()
+        $openDates = AgriculturalDefensiveOrder::query()
             ->where('crop_id', $cropId)
             ->where('status', 'A')
             ->whereHas('operators', fn ($q) => $q
@@ -669,7 +669,28 @@ class AgriculturalDefensiveOrderService
             ->map(fn ($row) => [
                 'date' => Carbon::parse($row->date)->toDateString(),
                 'open_orders' => (int) $row->open_orders,
-            ]);
+            ])
+            ->keyBy('date');
+
+        // Mantém acessíveis os tanques que ainda possuem saldo, mesmo quando
+        // todas as O.S. daquela data já foram finalizadas.
+        OperatorTank::query()
+            ->where('operator_id', $operatorId)
+            ->where('status', 'A')
+            ->whereHas('products', fn ($query) => $query->where('current_quantity', '>', 0))
+            ->orderBy('date')
+            ->pluck('date')
+            ->each(function ($date) use ($openDates): void {
+                $formattedDate = Carbon::parse($date)->toDateString();
+                if (! $openDates->has($formattedDate)) {
+                    $openDates->put($formattedDate, [
+                        'date' => $formattedDate,
+                        'open_orders' => 0,
+                    ]);
+                }
+            });
+
+        return $openDates->sortKeys()->values();
     }
 
     public function tankProductPlanning(int $cropId, int $operatorId, string $date): array
@@ -757,7 +778,32 @@ class AgriculturalDefensiveOrderService
         }
         unset($product);
 
+        // Produtos remanescentes no tanque também precisam aparecer para que
+        // possam ser devolvidos, mesmo sem necessidade em uma O.S. aberta.
+        foreach ($balances as $productId => $tankProduct) {
+            $key = (int) $productId;
+            $tankBalance = round((float) $tankProduct->current_quantity, 3);
+            if (isset($grouped[$key]) || $tankBalance <= 0) {
+                continue;
+            }
+
+            $grouped[$key] = [
+                'product_id' => $key,
+                'product_name' => $tankProduct->product?->name,
+                'dose' => 0.0,
+                'pump' => 0.0,
+                'planned_quantity' => 0.0,
+                'used_quantity' => 0.0,
+                'open_quantity' => 0.0,
+                'tank_balance' => $tankBalance,
+                'additional_need' => 0.0,
+                'suggested_withdrawal' => 0.0,
+                'orders' => [],
+            ];
+        }
+
         return [
+            'operator_tank_id' => $tank->id,
             'crop' => [
                 'id' => $crop->id,
                 'name' => $crop->name,
@@ -908,6 +954,7 @@ class AgriculturalDefensiveOrderService
             }
 
             $availableDates = $this->openTankDates($crop->id, $data['operator_id'])
+                ->where('open_orders', '>', 0)
                 ->pluck('date')
                 ->all();
             if (!in_array(Carbon::parse($data['date'])->format('Y-m-d'), $availableDates, true)) {

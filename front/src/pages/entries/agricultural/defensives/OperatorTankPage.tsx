@@ -40,6 +40,7 @@ export default function OperatorTankPage() {
   const [operatorId, setOperatorId] = useState('');
   const [date, setDate] = useState('');
   const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [returnQuantities, setReturnQuantities] = useState<Record<string, string>>({});
   const [observation, setObservation] = useState('');
   const [detailId, setDetailId] = useState<string | null>(null);
 
@@ -120,6 +121,30 @@ export default function OperatorTankPage() {
     },
   });
 
+  const returnMutation = useMutation({
+    mutationFn: async (items: Array<{ product_id: number; quantity: number }>) => {
+      if (!planning?.operator_tank_id) throw new Error('Tanque do operador não identificado.');
+      return Promise.all(items.map((item) => agriculturalServicesDefensiveService.moveTank({
+        operator_tank_id: planning.operator_tank_id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        movement_type: 'RETURN',
+        observation: observation || undefined,
+      })));
+    },
+    onSuccess: () => {
+      toast.success('Devolução ao estoque registrada com sucesso.');
+      setReturnQuantities({});
+      setObservation('');
+      queryClient.invalidateQueries({ queryKey: ['tank-planning'] });
+      queryClient.invalidateQueries({ queryKey: ['operator-tank'] });
+      queryClient.invalidateQueries({ queryKey: ['operator-tank-consolidation'] });
+    },
+    onError: (error) => {
+      toast.error(apiMessage(error, 'Não foi possível registrar a devolução.'));
+    },
+  });
+
   const handleWithdrawal = () => {
     const { payload, error } = buildWithdrawalPayload({
       crop_id: cropId,
@@ -133,6 +158,29 @@ export default function OperatorTankPage() {
       return;
     }
     withdrawalMutation.mutate(payload);
+  };
+
+  const handleReturn = () => {
+    const items: Array<{ product_id: number; quantity: number }> = [];
+    for (const product of planningProducts) {
+      const raw = returnQuantities[String(product.product_id)]?.trim();
+      if (!raw) continue;
+      if (!/^\d+(?:[.,]\d{1,3})?$/.test(raw)) {
+        toast.error(`Informe uma devolução válida, com até três casas decimais, para ${product.product_name}.`);
+        return;
+      }
+      const quantity = Number(raw.replace(',', '.'));
+      if (quantity <= 0 || quantity > Number(product.tank_balance) + 0.0000001) {
+        toast.error(`A devolução de ${product.product_name} deve ser maior que zero e não pode superar o saldo do tanque.`);
+        return;
+      }
+      items.push({ product_id: product.product_id, quantity });
+    }
+    if (items.length === 0) {
+      toast.error('Informe a quantidade de pelo menos um produto para devolver.');
+      return;
+    }
+    returnMutation.mutate(items);
   };
 
   const summaryCards: Array<{ label: string; value: string }> = summary
@@ -149,7 +197,7 @@ export default function OperatorTankPage() {
       <div>
         <h1 className="text-2xl font-bold">Tanque do Operador</h1>
         <p className="text-muted-foreground mt-1">
-          Selecione a safra, o tanqueiro e a data de corte para consolidar os produtos e registrar a retirada
+          Consolide os produtos, registre retiradas e devolva ao estoque os saldos existentes no tanque
         </p>
       </div>
 
@@ -167,7 +215,7 @@ export default function OperatorTankPage() {
                 <Combobox
                   options={cropOptions}
                   value={cropId}
-                  onValueChange={(v) => { setCropId(v); setOperatorId(''); setDate(''); setQuantities({}); }}
+                  onValueChange={(v) => { setCropId(v); setOperatorId(''); setDate(''); setQuantities({}); setReturnQuantities({}); }}
                   placeholder="Selecione a safra"
                   searchPlaceholder="Buscar safra..."
                 />
@@ -178,7 +226,7 @@ export default function OperatorTankPage() {
               <Combobox
                 options={operatorOptions}
                 value={operatorId}
-                onValueChange={(v) => { setOperatorId(v); setDate(''); setQuantities({}); }}
+                onValueChange={(v) => { setOperatorId(v); setDate(''); setQuantities({}); setReturnQuantities({}); }}
                 placeholder={cropId ? 'Selecione o tanqueiro' : 'Selecione a safra primeiro'}
                 searchPlaceholder="Buscar tanqueiro..."
               />
@@ -188,7 +236,7 @@ export default function OperatorTankPage() {
               <Label>Data de corte</Label>
               <Select
                 value={date}
-                onValueChange={(v) => { setDate(v); setQuantities({}); }}
+                onValueChange={(v) => { setDate(v); setQuantities({}); setReturnQuantities({}); }}
                 disabled={!cropId || !operatorId || loadingDates}
               >
                 <SelectTrigger>
@@ -256,6 +304,7 @@ export default function OperatorTankPage() {
                       <TableHead className="text-right">Saldo no tanque</TableHead>
                       <TableHead className="text-right">Necessidade adicional</TableHead>
                       <TableHead className="text-right w-40">Retirar</TableHead>
+                      <TableHead className="text-right w-40">Devolver</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -282,6 +331,22 @@ export default function OperatorTankPage() {
                             }
                           />
                         </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            max={Number(p.tank_balance)}
+                            aria-label={`Devolver ${p.product_name}`}
+                            className="text-right"
+                            value={returnQuantities[String(p.product_id)] ?? ''}
+                            placeholder="0"
+                            disabled={Number(p.tank_balance) <= 0}
+                            onChange={(e) =>
+                              setReturnQuantities((prev) => ({ ...prev, [String(p.product_id)]: e.target.value }))
+                            }
+                          />
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -289,19 +354,35 @@ export default function OperatorTankPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tank-observation">Observação</Label>
+                <Label htmlFor="tank-observation">Observação da movimentação</Label>
                 <Textarea
                   id="tank-observation"
                   value={observation}
                   maxLength={500}
                   onChange={(e) => setObservation(e.target.value)}
-                  placeholder="Observação da retirada..."
+                  placeholder="Observação da retirada ou devolução..."
                   rows={2}
                 />
               </div>
 
-              <div className="flex justify-end">
-                <Button type="button" disabled={withdrawalMutation.isPending} onClick={handleWithdrawal}>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={returnMutation.isPending || withdrawalMutation.isPending}
+                  onClick={handleReturn}
+                >
+                  {returnMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Devolvendo...</>
+                  ) : (
+                    'Registrar devolução'
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  disabled={withdrawalMutation.isPending || returnMutation.isPending || Number(summary?.open_orders ?? 0) === 0}
+                  onClick={handleWithdrawal}
+                >
                   {withdrawalMutation.isPending ? (
                     <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Registrando...</>
                   ) : (

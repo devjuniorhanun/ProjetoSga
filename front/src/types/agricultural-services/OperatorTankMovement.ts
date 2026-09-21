@@ -12,9 +12,10 @@ export interface OperatorTankMovement {
 }
 
 export interface OperatorTankMovementRequest {
-  operator_id: number;
+  operator_tank_id: number;
   product_id: number;
   quantity: number;
-  movement_type: string;
+  movement_type: 'WITHDRAWAL' | 'RETURN';
+  order_id?: number;
   observation?: string;
 }

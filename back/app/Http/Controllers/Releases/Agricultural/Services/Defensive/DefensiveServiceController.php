@@ -177,6 +177,16 @@ class DefensiveServiceController extends Controller
 
     public function tankMovement(OperatorTankMovementRequest $request)
     {
-        return new OperatorTankResource($this->service->moveTank($request->validated(), $request->user()?->id)->load('products.product'));
+        try {
+            return new OperatorTankResource(
+                $this->service->moveTank($request->validated(), $request->user()?->id)
+                    ->load('products.product')
+            );
+        } catch (RuntimeException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'errors' => ['movement' => [$exception->getMessage()]],
+            ], 422);
+        }
     }
 }

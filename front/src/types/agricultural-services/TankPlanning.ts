@@ -31,6 +31,7 @@ export interface TankPlanningSummary {
 }
 
 export interface TankPlanning {
+  operator_tank_id: number;
   crop: { id: number; name: string };
   operator: { id: number; name: string };
   date: string;
