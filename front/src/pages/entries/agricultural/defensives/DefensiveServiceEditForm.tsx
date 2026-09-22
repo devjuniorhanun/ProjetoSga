@@ -1,7 +1,7 @@
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState, useEffect, useMemo, FormEvent } from 'react';
+import { useState, useEffect, useMemo, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
@@ -48,6 +48,7 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
+type EditTab = 'main' | 'operators' | 'products' | 'previous_os';
 
 const operatorSchema = z.object({
   operator_id: z.string().min(1, 'Operador obrigatório'),
@@ -78,6 +79,7 @@ interface Props {
 export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<EditTab>('main');
 
   const [operators, setOperators] = useState<AgriculturalDefensiveOrderOperator[]>(item.operators ?? []);
   const [products, setProducts] = useState<AgriculturalDefensiveOrderProduct[]>(item.products ?? []);
@@ -110,12 +112,12 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
     try {
       const { data } = await api.get(`/registrations/harvest/crops/${cropId}/cultures`);
       const crop = data.data ?? data;
-      const cultureIds: string[] = crop?.culture_ids ?? [];
+      const cultureIds = (crop?.culture_ids ?? []).map((id: string | number) => String(id));
       if (cultureIds.length > 0) {
         const { data: allCultures } = await api.get('/registrations/harvest/cultures');
         const list = allCultures.data ?? allCultures;
-        const filtered = Array.isArray(list) ? list.filter((c: any) => cultureIds.includes(c.id)) : [];
-        setCropCultures(filtered);
+        const filtered = Array.isArray(list) ? list.filter((c: any) => cultureIds.includes(String(c.id))) : [];
+        setCropCultures(filtered.map((culture: any) => ({ ...culture, id: String(culture.id) })));
       } else {
         setCropCultures([]);
       }
@@ -127,15 +129,15 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
   };
 
   useEffect(() => {
-    if (item.crop_id) fetchCulturesByCrop(item.crop_id);
+    if (item.crop_id) fetchCulturesByCrop(String(item.crop_id));
   }, []);
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, setError } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      crop_id: item.crop_id,
-      culture_id: item.culture_id,
-      type_operation_id: item.type_operation_id,
+      crop_id: item.crop_id != null ? String(item.crop_id) : '',
+      culture_id: item.culture_id != null ? String(item.culture_id) : '',
+      type_operation_id: item.type_operation_id != null ? String(item.type_operation_id) : '',
       application_date: item.application_date,
       pump_volume: item.pump_volume,
       flow: item.flow,
@@ -143,8 +145,8 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
       field_id: item.field_id != null ? String(item.field_id) : '',
       area: item.area ?? 0,
       recommended_pump: item.recommended_pump ?? 0,
-      observation: item.observation,
-      status: item.status,
+      observation: item.observation ?? '',
+      status: item.status != null ? String(item.status) : '',
     },
   });
 
@@ -280,22 +282,45 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
     }
   };
 
+  const showFormErrors = (formErrors: FieldErrors<FormData>) => {
+    setActiveTab('main');
+    const firstError = Object.values(formErrors).find((error) => typeof error?.message === 'string');
+    toast.error(
+      typeof firstError?.message === 'string'
+        ? firstError.message
+        : 'Revise os campos obrigatórios do serviço agrícola.',
+    );
+  };
+
+  const validateRelationships = (requirePreviousOS: boolean) => {
+    if (operators.length === 0) {
+      setActiveTab('operators');
+      toast.error('Adicione pelo menos um operador.');
+      return false;
+    }
+    if (!operators.some((op) => op.function === 'T')) {
+      setActiveTab('operators');
+      toast.error('Adicione pelo menos um operador com função Tanqueiro.');
+      return false;
+    }
+    if (products.length === 0) {
+      setActiveTab('products');
+      toast.error('Adicione pelo menos um produto.');
+      return false;
+    }
+    if (requirePreviousOS && previousOS.length === 0) {
+      setActiveTab('previous_os');
+      toast.error('Adicione pelo menos uma O.S. anterior para realizar a reemissão.');
+      return false;
+    }
+    return true;
+  };
+
   const requestReissue = () => {
     handleSubmit(() => {
-      if (operators.length === 0) {
-        toast.error('Adicione pelo menos um operador.');
-        return;
-      }
-      if (!operators.some((op) => op.function === 'T')) {
-        toast.error('Adicione pelo menos um operador com função Tanqueiro.');
-        return;
-      }
-      if (products.length === 0) {
-        toast.error('Adicione pelo menos um produto.');
-        return;
-      }
+      if (!validateRelationships(true)) return;
       setShowReissueDialog(true);
-    })();
+    }, showFormErrors)();
   };
 
   // Validações locais + abertura do diálogo de confirmação.
@@ -303,20 +328,9 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
   const requestConfirmation = (e?: FormEvent) => {
     e?.preventDefault();
     handleSubmit(() => {
-      if (operators.length === 0) {
-        toast.error('Adicione pelo menos um operador.');
-        return;
-      }
-      if (!operators.some((op) => op.function === 'T')) {
-        toast.error('Adicione pelo menos um operador com função Tanqueiro.');
-        return;
-      }
-      if (products.length === 0) {
-        toast.error('Adicione pelo menos um produto.');
-        return;
-      }
+      if (!validateRelationships(false)) return;
       setShowConfirmDialog(true);
-    })();
+    }, showFormErrors)();
   };
 
   const loadingRel = l1 || l3 || l4 || l5 || l7;
@@ -326,7 +340,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
       {loadingRel ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Carregando...</div>
       ) : (
-        <Tabs defaultValue="main" className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EditTab)} className="w-full">
           <TabsList className="w-full">
             <TabsTrigger value="main" className="flex-1">Serviço Agrícola</TabsTrigger>
             <TabsTrigger value="operators" className="flex-1">Operadores</TabsTrigger>
@@ -341,7 +355,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
                 <Label>Safra</Label>
                 <Select value={watch('crop_id')} onValueChange={(v) => { setValue('crop_id', v); setValue('culture_id', ''); setCropCultures([]); fetchCulturesByCrop(v); }}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>{crops.filter((c: any) => c.status === 'A').map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                  <SelectContent>{crops.filter((c: any) => c.status === 'A').map((c) => <SelectItem key={String(c.id)} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
                 </Select>
                 {errors.crop_id && <p className="text-sm text-destructive">{errors.crop_id.message}</p>}
               </div>
@@ -352,7 +366,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
                 ) : (
                   <Select value={watch('culture_id')} onValueChange={(v) => setValue('culture_id', v)}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>{cropCultures.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>{cropCultures.map((c) => <SelectItem key={String(c.id)} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
                   </Select>
                 )}
                 {errors.culture_id && <p className="text-sm text-destructive">{errors.culture_id.message}</p>}
@@ -361,7 +375,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
                 <Label>Tipo de Operação</Label>
                 <Select value={watch('type_operation_id')} onValueChange={(v) => setValue('type_operation_id', v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>{typeOperations.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                  <SelectContent>{typeOperations.map((t) => <SelectItem key={String(t.id)} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent>
                 </Select>
                 {errors.type_operation_id && <p className="text-sm text-destructive">{errors.type_operation_id.message}</p>}
               </div>
@@ -392,7 +406,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
                 <Label>Talhão</Label>
                 <Select value={watch('field_id')} onValueChange={(v) => setValue('field_id', v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>{fieldsList.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent>
+                  <SelectContent>{fieldsList.map((f) => <SelectItem key={String(f.id)} value={String(f.id)}>{f.name}</SelectItem>)}</SelectContent>
                 </Select>
                 {errors.field_id && <p className="text-sm text-destructive">{errors.field_id.message}</p>}
               </div>
@@ -702,7 +716,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
         confirmVariant="success"
         onConfirm={() => {
           setShowConfirmDialog(false);
-          handleSubmit(onSubmit)();
+          handleSubmit(onSubmit, showFormErrors)();
         }}
       />
 
@@ -715,7 +729,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
         confirmVariant="success"
         onConfirm={() => {
           setShowReissueDialog(false);
-          handleSubmit(onReissue)();
+          handleSubmit(onReissue, showFormErrors)();
         }}
       />
     </form>
