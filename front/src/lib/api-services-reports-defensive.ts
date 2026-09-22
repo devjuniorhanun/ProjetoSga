@@ -10,6 +10,7 @@ export interface DefensiveReportProduct {
   product_id: string | number;
   product_name: string;
   recommended_quantity: number;
+  recommended_dose: number | null;
   used_quantity: number;
   used_per_area: number | null;
 }
@@ -26,6 +27,7 @@ export interface DefensiveReportOrder {
   field_real_area: number;
   recommended_pump: number;
   used_bomb: number;
+  pump_difference_percentage: number | null;
   status: string;
   observation?: string;
   operators: Array<{ name?: string; fleet?: string; function: string }>;

@@ -150,6 +150,9 @@ class DefensiveOrderReportController extends Controller
             'field_real_area' => round($realArea, 3),
             'recommended_pump' => round((float) $order->recommended_pump, 3),
             'used_bomb' => round((float) $order->used_bomb, 3),
+            'pump_difference_percentage' => (float) $order->recommended_pump > 0
+                ? round((((float) $order->used_bomb - (float) $order->recommended_pump) / (float) $order->recommended_pump) * 100, 2)
+                : null,
             'status' => $order->status,
             'observation' => $order->observation,
             'operators' => $order->operators->map(fn ($operator) => [
@@ -161,6 +164,7 @@ class DefensiveOrderReportController extends Controller
                 'product_id' => $product->product_id,
                 'product_name' => $product->product?->name,
                 'recommended_quantity' => round((float) $product->recommended_quantity, 3),
+                'recommended_dose' => round((float) $product->dose, 3),
                 'used_quantity' => round((float) $product->actual_quantity, 3),
                 'used_per_area' => $area > 0 ? round((float) $product->actual_quantity / $area, 3) : null,
             ])->values(),
@@ -179,6 +183,7 @@ class DefensiveOrderReportController extends Controller
                     'product_id' => $items->first()->product_id,
                     'product_name' => $items->first()->product?->name,
                     'recommended_quantity' => round($recommended, 3),
+                    'recommended_dose' => $area > 0 ? round($recommended / $area, 3) : null,
                     'used_quantity' => round($used, 3),
                     'used_per_area' => $area > 0 ? round($used / $area, 3) : null,
                 ];
