@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Releases\Agricultural\Services\Defensive;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Releases\Agricultural\Services\Defensive\AgriculturalDefensiveOrderClosingRequest;
 use App\Http\Requests\Releases\Agricultural\Services\Defensive\AgriculturalDefensiveOrderRequest;
+use App\Http\Requests\Releases\Agricultural\Services\Defensive\AgriculturalDefensiveOrderReissueRequest;
 use App\Http\Requests\Releases\Agricultural\Services\Defensive\AgriculturalDefensiveOrderProductSequenceRequest;
 use App\Http\Requests\Releases\Agricultural\Services\Defensive\OperatorTankMovementRequest;
 use App\Http\Requests\Releases\Agricultural\Services\Defensive\OperatorTankWithdrawalRequest;
@@ -63,12 +64,12 @@ class DefensiveServiceController extends Controller
         );
     }
 
-    public function reissue(AgriculturalDefensiveOrder $order, AgriculturalDefensiveOrderRequest $request)
+    public function reissue(AgriculturalDefensiveOrder $order, AgriculturalDefensiveOrderReissueRequest $request)
     {
         try {
             $children = $this->service->reissue(
                 $order,
-                array_merge($request->validated(), ['previous_os' => $request->input('previous_os', [])])
+                $request->validated()
             );
             return response()->json([
                 'data' => AgriculturalDefensiveOrderResource::collection(collect($children)),

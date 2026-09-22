@@ -69,15 +69,6 @@ class AgriculturalDefensiveOrderRequest extends FormRequest
             'products.*.dose' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
             // Guarda a quantidade recomendada do produto por bomba.
             'products.*.pump' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
-            // Permite relacionar uma ou mais O.S. anteriores, inclusive repetidas.
-            'previous_os' => ['sometimes', 'array'],
-            'previous_os.*' => ['required', 'array'],
-            'previous_os.*.os_number' => [
-                'required',
-                'integer',
-                'exists:agricultural_defensive_orders,os_number',
-            ],
-            'previous_os.*.quantity_used' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
         ];
     }
 
@@ -211,12 +202,6 @@ class AgriculturalDefensiveOrderRequest extends FormRequest
             'products.*.dose' => 'dose',
             // Nome do pump do produto.
             'products.*.pump' => 'quantidade por bomba',
-            // Nome da lista de ordens anteriores.
-            'previous_os' => 'ordens anteriores',
-            // Nome da OS anterior.
-            'previous_os.*.os_number' => 'número da OS anterior',
-            // Nome da quantidade usada.
-            'previous_os.*.quantity_used' => 'bombas usadas da OS anterior',
         ];
     }
 }

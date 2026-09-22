@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import {
   AgriculturalDefensiveOrder,
@@ -35,6 +35,8 @@ export function DefensiveOrderClosingDialog({ orderId, open, onOpenChange }: Pro
   const [closingBomb, setClosingBomb] = useState<string>('');
   const [closingType, setClosingType] = useState<'PARTIAL' | 'FINAL'>('PARTIAL');
   const [saving, setSaving] = useState(false);
+  const [reissuing, setReissuing] = useState(false);
+  const [previousOrders, setPreviousOrders] = useState<Array<{ os_number: string; quantity_used: string }>>([]);
 
   const { data: order, isLoading } = useQuery<AgriculturalDefensiveOrder>({
     queryKey: ['defensive-orders', orderId],
@@ -47,6 +49,7 @@ export function DefensiveOrderClosingDialog({ orderId, open, onOpenChange }: Pro
       setOperatorTankId('');
       setClosingBomb('');
       setClosingType('PARTIAL');
+      setPreviousOrders([]);
     }
   }, [open]);
 
@@ -86,6 +89,55 @@ export function DefensiveOrderClosingDialog({ orderId, open, onOpenChange }: Pro
       toast.error(apiMessage(error, 'Erro ao registrar o fechamento.'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const addPreviousOrder = () => {
+    setPreviousOrders((current) => [...current, { os_number: '', quantity_used: '' }]);
+  };
+
+  const updatePreviousOrder = (
+    index: number,
+    field: 'os_number' | 'quantity_used',
+    value: string,
+  ) => {
+    setPreviousOrders((current) => current.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, [field]: value } : item
+    )));
+  };
+
+  const handleReissue = async () => {
+    if (!orderId) return;
+    if (previousOrders.length === 0) {
+      toast.error('Adicione pelo menos uma O.S. anterior.');
+      return;
+    }
+
+    const invalidIndex = previousOrders.findIndex((item) => (
+      !item.os_number.trim()
+      || (Number(String(item.quantity_used).replace(',', '.')) || 0) <= 0
+    ));
+    if (invalidIndex >= 0) {
+      toast.error(`Informe o número e a quantidade usada da O.S. anterior ${invalidIndex + 1}.`);
+      return;
+    }
+
+    setReissuing(true);
+    try {
+      await defensiveOrdersService.reissue(orderId, {
+        previous_os: previousOrders.map((item) => ({
+          os_number: item.os_number.trim(),
+          quantity_used: Number(String(item.quantity_used).replace(',', '.')),
+        })),
+      });
+      toast.success(previousOrders.length > 1 ? 'Ordens filhas geradas com sucesso!' : 'O.S. filha gerada com sucesso!');
+      setPreviousOrders([]);
+      queryClient.invalidateQueries({ queryKey: ['defensive-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['operator-tank'] });
+    } catch (error) {
+      toast.error(apiMessage(error, 'Erro ao gerar a O.S. filha.'));
+    } finally {
+      setReissuing(false);
     }
   };
 
@@ -213,6 +265,71 @@ export function DefensiveOrderClosingDialog({ orderId, open, onOpenChange }: Pro
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+            )}
+
+            {order?.status === 'A' && (
+              <div className="space-y-3 rounded-md border p-4">
+                <div>
+                  <h3 className="font-medium">O.S. anterior e reemissão</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Informe uma ou mais ordens anteriores. Cada item gera uma nova O.S. filha vinculada à O.S. aberta atual.
+                  </p>
+                </div>
+
+                {previousOrders.length > 0 && (
+                  <div className="space-y-2">
+                    {previousOrders.map((previous, index) => (
+                      <div key={index} className="grid grid-cols-[1fr_1fr_auto] items-end gap-3">
+                        <div className="space-y-1">
+                          <Label>Número da O.S. anterior</Label>
+                          <Input
+                            inputMode="numeric"
+                            value={previous.os_number}
+                            onChange={(event) => updatePreviousOrder(index, 'os_number', event.target.value)}
+                            placeholder="Ex.: 3"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Quantidade usada</Label>
+                          <Input
+                            type="number"
+                            step="0.001"
+                            min="0.001"
+                            value={previous.quantity_used}
+                            onChange={(event) => updatePreviousOrder(index, 'quantity_used', event.target.value)}
+                            placeholder="0,000"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() => setPreviousOrders((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                          title="Remover O.S. anterior"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex justify-between gap-2">
+                  <Button type="button" variant="outline" onClick={addPreviousOrder}>
+                    <Plus className="mr-2 h-4 w-4" /> Adicionar O.S. anterior
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={reissuing || previousOrders.length === 0}
+                    onClick={handleReissue}
+                  >
+                    {reissuing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Reemitir O.S.
+                  </Button>
+                </div>
               </div>
             )}
 

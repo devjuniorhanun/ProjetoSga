@@ -15,7 +15,6 @@ import {
   AgriculturalDefensiveOrder,
   AgriculturalDefensiveOrderOperator,
   AgriculturalDefensiveOrderProduct,
-  AgriculturalDefensiveOrderPreviousOrder,
   defensiveOrdersService,
 } from '@/lib/api-services-entries';
 import { cropsService } from '@/lib/api-services';
@@ -48,7 +47,7 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
-type EditTab = 'main' | 'operators' | 'products' | 'previous_os';
+type EditTab = 'main' | 'operators' | 'products';
 
 const operatorSchema = z.object({
   operator_id: z.string().min(1, 'Operador obrigatório'),
@@ -64,12 +63,6 @@ const productSchema = z.object({
 });
 type ProductFormData = z.infer<typeof productSchema>;
 
-const previousOSSchema = z.object({
-  os_number: z.string().min(1, 'Número de O.S obrigatório'),
-  quantity_used: z.coerce.number().gt(0, 'A quantidade usada deve ser maior que zero'),
-});
-type PreviousOSFormData = z.infer<typeof previousOSSchema>;
-
 interface Props {
   item: AgriculturalDefensiveOrder;
   onSave: () => void;
@@ -83,14 +76,11 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
 
   const [operators, setOperators] = useState<AgriculturalDefensiveOrderOperator[]>(item.operators ?? []);
   const [products, setProducts] = useState<AgriculturalDefensiveOrderProduct[]>(item.products ?? []);
-  const [previousOS, setPreviousOS] = useState<AgriculturalDefensiveOrderPreviousOrder[]>(item.previous_os ?? []);
   const [appliedAreaDisplay, setAppliedAreaDisplay] = useState(formatAreaDisplay(item.area ?? 0));
 
   const [showOperatorModal, setShowOperatorModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
-  const [showPreviousOSModal, setShowPreviousOSModal] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [showReissueDialog, setShowReissueDialog] = useState(false);
 
   const { data: crops = [], isLoading: l1 } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
   const [cropCultures, setCropCultures] = useState<{ id: string; name: string }[]>([]);
@@ -224,18 +214,6 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
     productForm.reset({ dose: 0, pump: 0 });
   };
 
-  // ----- Previous OS modal -----
-  const previousOSForm = useForm<PreviousOSFormData>({
-    resolver: zodResolver(previousOSSchema),
-    defaultValues: { os_number: '', quantity_used: 0 },
-  });
-
-  const handleAddPreviousOS = (data: PreviousOSFormData) => {
-    setPreviousOS((prev) => [...prev, { os_number: data.os_number, quantity_used: data.quantity_used }]);
-    setShowPreviousOSModal(false);
-    previousOSForm.reset({ os_number: '', quantity_used: 0 });
-  };
-
   const buildPayload = (data: FormData) => ({
     crop_id: data.crop_id,
     culture_id: data.culture_id,
@@ -250,8 +228,6 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
     fields: [{ field_id: data.field_id, area: data.area }],
     operators: operators.map((o) => ({ operator_id: o.operator_id, fleet_id: o.fleet_id, function: o.function })),
     products: products.map((p) => ({ product_id: p.product_id, dose: p.dose, pump: p.pump })),
-    // Duplicidades preservadas: nenhum filtro/dedupe aplicado aqui.
-    previous_os: previousOS.map((os) => ({ os_number: os.os_number, quantity_used: os.quantity_used })),
   });
 
   const onSubmit = async (data: FormData) => {
@@ -268,20 +244,6 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
     }
   };
 
-  const onReissue = async (data: FormData) => {
-    setLoading(true);
-    try {
-      await defensiveOrdersService.reissue(item.id, buildPayload(data) as Partial<AgriculturalDefensiveOrder>);
-      toast.success('O.S. reemitida com sucesso!');
-      queryClient.invalidateQueries({ queryKey: ['defensive-orders'] });
-      onSave();
-    } catch (error: any) {
-      applyApiErrors(error, setError, { fallbackMessage: 'Erro ao reemitir a O.S.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const showFormErrors = (formErrors: FieldErrors<FormData>) => {
     setActiveTab('main');
     const firstError = Object.values(formErrors).find((error) => typeof error?.message === 'string');
@@ -292,7 +254,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
     );
   };
 
-  const validateRelationships = (requirePreviousOS: boolean) => {
+  const validateRelationships = () => {
     if (operators.length === 0) {
       setActiveTab('operators');
       toast.error('Adicione pelo menos um operador.');
@@ -308,19 +270,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
       toast.error('Adicione pelo menos um produto.');
       return false;
     }
-    if (requirePreviousOS && previousOS.length === 0) {
-      setActiveTab('previous_os');
-      toast.error('Adicione pelo menos uma O.S. anterior para realizar a reemissão.');
-      return false;
-    }
     return true;
-  };
-
-  const requestReissue = () => {
-    handleSubmit(() => {
-      if (!validateRelationships(true)) return;
-      setShowReissueDialog(true);
-    }, showFormErrors)();
   };
 
   // Validações locais + abertura do diálogo de confirmação.
@@ -328,7 +278,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
   const requestConfirmation = (e?: FormEvent) => {
     e?.preventDefault();
     handleSubmit(() => {
-      if (!validateRelationships(false)) return;
+      if (!validateRelationships()) return;
       setShowConfirmDialog(true);
     }, showFormErrors)();
   };
@@ -345,7 +295,6 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
             <TabsTrigger value="main" className="flex-1">Serviço Agrícola</TabsTrigger>
             <TabsTrigger value="operators" className="flex-1">Operadores</TabsTrigger>
             <TabsTrigger value="products" className="flex-1">Produtos</TabsTrigger>
-            <TabsTrigger value="previous_os" className="flex-1">O.S Anterior</TabsTrigger>
           </TabsList>
 
           {/* ─── ABA PRINCIPAL ─── */}
@@ -532,48 +481,11 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
             </Button>
           </TabsContent>
 
-          {/* ─── ABA O.S ANTERIOR ─── */}
-          <TabsContent value="previous_os" className="space-y-4 pt-2">
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Número de O.S</TableHead>
-                    <TableHead className="text-right">Quantidade Usada</TableHead>
-                    <TableHead className="w-12"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {previousOS.length === 0 ? (
-                    <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6">Nenhuma O.S anterior adicionada</TableCell></TableRow>
-                  ) : (
-                    previousOS.map((os, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>{os.os_number}</TableCell>
-                        <TableCell className="text-right">{os.quantity_used}</TableCell>
-                        <TableCell>
-                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setPreviousOS((prev) => prev.filter((_, i) => i !== idx))}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            <Button type="button" variant="outline" onClick={() => { previousOSForm.reset({ os_number: '', quantity_used: 0 }); setShowPreviousOSModal(true); }}>
-              <Plus className="mr-2 h-4 w-4" /> Adicionar O.S Anterior
-            </Button>
-          </TabsContent>
         </Tabs>
       )}
 
       <div className="flex justify-end gap-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
-        <Button type="button" variant="secondary" disabled={loading} onClick={requestReissue}>
-          Reemitir O.S.
-        </Button>
         <Button type="button" disabled={loading} onClick={() => requestConfirmation()}>
           {loading ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" /> : 'Salvar'}
         </Button>
@@ -684,29 +596,6 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
         </DialogContent>
       </Dialog>
 
-      {/* ─── MODAL O.S ANTERIOR ─── */}
-      <Dialog open={showPreviousOSModal} onOpenChange={setShowPreviousOSModal}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Adicionar O.S Anterior</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); previousOSForm.handleSubmit(handleAddPreviousOS)(e); }} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Número de O.S</Label>
-              <Input {...previousOSForm.register('os_number')} placeholder="Informe o número da O.S" />
-              {previousOSForm.formState.errors.os_number && <p className="text-sm text-destructive">{previousOSForm.formState.errors.os_number.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label>Quantidade Usada</Label>
-              <Input type="number" step="0.001" min="0.001" {...previousOSForm.register('quantity_used')} />
-              {previousOSForm.formState.errors.quantity_used && <p className="text-sm text-destructive">{previousOSForm.formState.errors.quantity_used.message}</p>}
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setShowPreviousOSModal(false)}>Cancelar</Button>
-              <Button type="submit">Adicionar</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
       <ConfirmDialog
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
@@ -720,18 +609,6 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
         }}
       />
 
-      <ConfirmDialog
-        open={showReissueDialog}
-        onOpenChange={setShowReissueDialog}
-        title="Confirmar reemissão"
-        description="Será criada uma O.S. filha para cada O.S. anterior informada, vinculada à O.S. aberta atual. Deseja continuar?"
-        confirmLabel="Reemitir"
-        confirmVariant="success"
-        onConfirm={() => {
-          setShowReissueDialog(false);
-          handleSubmit(onReissue, showFormErrors)();
-        }}
-      />
     </form>
   );
 }

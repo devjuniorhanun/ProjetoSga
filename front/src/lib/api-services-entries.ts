@@ -227,6 +227,13 @@ export interface AgriculturalDefensiveOrderPreviousOrder {
   quantity_used: number;
 }
 
+export interface DefensiveOrderReissuePayload {
+  previous_os: Array<{
+    os_number: string;
+    quantity_used: number;
+  }>;
+}
+
 export interface AgriculturalDefensiveOrderClosingProductRef {
   product_id?: DefensiveOrderId;
   product_name?: string;
@@ -315,7 +322,7 @@ export const defensiveOrdersService = {
   ...createCrudService<AgriculturalDefensiveOrder>(DEFENSIVE_ORDERS_ENDPOINT),
   reissue: async (
     id: DefensiveOrderId,
-    payload: Partial<AgriculturalDefensiveOrder>,
+    payload: DefensiveOrderReissuePayload,
   ): Promise<AgriculturalDefensiveOrder> => {
     const { data } = await api.post(`${DEFENSIVE_ORDERS_ENDPOINT}/${id}/reissue`, payload);
     return data.data ?? data;
@@ -343,5 +350,4 @@ export const defensiveOrdersService = {
     return data.data ?? data;
   },
 };
-
 

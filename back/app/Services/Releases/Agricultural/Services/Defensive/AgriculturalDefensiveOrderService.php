@@ -268,35 +268,6 @@ class AgriculturalDefensiveOrderService
                 }
             }
 
-            if (array_key_exists('previous_os', $data)) {
-                $previousOrders = [];
-                foreach ($data['previous_os'] as $previous) {
-                    $previousOrder = AgriculturalDefensiveOrder::query()
-                        ->where('os_number', $previous['os_number'])
-                        ->lockForUpdate()
-                        ->firstOrFail();
-
-                    if ((int) $previousOrder->id === (int) $order->id) {
-                        throw new RuntimeException('Uma O.S. não pode ser relacionada como anterior dela mesma.');
-                    }
-
-                    $previousOrders[] = [
-                        'order_id' => $order->id,
-                        'previous_order_id' => $previousOrder->id,
-                        'quantity_used' => round((float) $previous['quantity_used'], 3),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
-                }
-
-                AgriculturalDefensiveOrderPreviousOrder::query()
-                    ->where('order_id', $order->id)
-                    ->delete();
-                if ($previousOrders !== []) {
-                    AgriculturalDefensiveOrderPreviousOrder::query()->insert($previousOrders);
-                }
-            }
-
             return $this->find($order->refresh());
         });
     }
@@ -439,7 +410,7 @@ class AgriculturalDefensiveOrderService
         });
     }
 
-    // Cria ordens filhas durante uma edição/reemissão.
+    // Cria ordens filhas a partir do fluxo de fechamento/reemissão.
     public function reissue(AgriculturalDefensiveOrder $parent, array $data): array
     {
         return DB::transaction(function () use ($parent, $data): array {
