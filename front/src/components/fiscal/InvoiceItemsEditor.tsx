@@ -361,6 +361,7 @@ export function InvoiceItemsEditor({ entryType, items, onChange, disabled }: Pro
                         <Label className="text-xs">Data de fabricação</Label>
                         <Input
                           type="date"
+                          max={destination.expiration_date ?? undefined}
                           value={destination.manufacturing_date ?? ''}
                           onChange={(event) =>
                             setDestination(index, { manufacturing_date: event.target.value })
@@ -371,6 +372,7 @@ export function InvoiceItemsEditor({ entryType, items, onChange, disabled }: Pro
                         <Label className="text-xs">Data de vencimento</Label>
                         <Input
                           type="date"
+                          min={destination.manufacturing_date ?? undefined}
                           value={destination.expiration_date ?? ''}
                           onChange={(event) => setDestination(index, { expiration_date: event.target.value })}
                         />

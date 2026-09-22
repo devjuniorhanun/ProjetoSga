@@ -91,13 +91,25 @@ export function defaultDestinationIsValid(destination: InvoiceItemDestination): 
   return !!destination.stock_location_id && (Number(destination.quantity) || 0) > 0;
 }
 
+/** Confirma uma data ISO real, evitando que datas como 31/09 sejam tratadas como campo genérico incompleto. */
+export function isValidIsoDate(value?: string | null): boolean {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
 export function defensiveDestinationIsValid(destination: InvoiceItemDestination): boolean {
   return (
     defaultDestinationIsValid(destination) &&
     !!destination.batch &&
-    !!destination.manufacturing_date &&
-    !!destination.expiration_date &&
-    destination.expiration_date >= destination.manufacturing_date
+    isValidIsoDate(destination.manufacturing_date) &&
+    isValidIsoDate(destination.expiration_date) &&
+    destination.expiration_date! >= destination.manufacturing_date!
   );
 }
 
@@ -136,9 +148,38 @@ export function validateInvoiceItem(entryType: FiscalEntryType, item: EntryInvoi
     errors.push('A soma dos destinos deve ser igual à quantidade do item.');
   }
   item.destinations?.forEach((destination, index) => {
-    if (!destinationIsValid(entryType, destination)) {
-      errors.push(`Destino ${index + 1} incompleto.`);
+    const prefix = entryType === 'SEED' || entryType === 'DEFENSIVE' ? `Lote ${index + 1}` : `Destino ${index + 1}`;
+    if (entryType === 'INPUT' && !destination.plot_field_id && !destination.stock_location_id) {
+      errors.push(`${prefix}: informe o talhão ou o local de estoque.`);
+    } else if (entryType !== 'INPUT' && !destination.stock_location_id) {
+      errors.push(`${prefix}: local de estoque obrigatório.`);
     }
+    if ((entryType === 'FUEL' || entryType === 'LUBRICANT') && !destination.fuel_station_id) {
+      errors.push(`${prefix}: selecione um posto físico válido.`);
+    }
+    if ((entryType === 'SEED' || entryType === 'DEFENSIVE') && !destination.batch?.trim()) {
+      errors.push(`${prefix}: número do lote obrigatório.`);
+    }
+    if (entryType === 'SEED') {
+      if (!destination.sieve?.trim()) errors.push(`${prefix}: peneira obrigatória.`);
+      if (!destination.variety_culture_id || !destination.culture_id) {
+        errors.push(`${prefix}: variedade obrigatória.`);
+      }
+    }
+    if (entryType === 'DEFENSIVE') {
+      if (!isValidIsoDate(destination.manufacturing_date)) {
+        errors.push(`${prefix}: informe uma data de fabricação válida.`);
+      }
+      if (!isValidIsoDate(destination.expiration_date)) {
+        errors.push(`${prefix}: informe uma data de vencimento válida.`);
+      } else if (
+        isValidIsoDate(destination.manufacturing_date) &&
+        destination.expiration_date! < destination.manufacturing_date!
+      ) {
+        errors.push(`${prefix}: o vencimento não pode ser anterior à fabricação.`);
+      }
+    }
+    if (!(Number(destination.quantity) > 0)) errors.push(`${prefix}: quantidade deve ser maior que zero.`);
   });
   return { valid: errors.length === 0, errors };
 }

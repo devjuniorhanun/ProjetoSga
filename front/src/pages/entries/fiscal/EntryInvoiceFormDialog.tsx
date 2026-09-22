@@ -93,6 +93,7 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [xmlOpen, setXmlOpen] = useState(false);
   const [entryMethod, setEntryMethod] = useState<'MANUAL' | 'XML_IMPORT'>('MANUAL');
+  const [activeTab, setActiveTab] = useState('header');
 
   const administrativeCenters = useAdministrativeCentersByProducer(header.producer_id);
 
@@ -142,6 +143,7 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
       setEntryMethod('MANUAL');
     }
     setFieldErrors({});
+    setActiveTab('header');
   }, [open, invoice, entryType]);
 
   const productsTotal = useMemo(() => productsValue(items), [items]);
@@ -187,13 +189,13 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
       const result = validateInvoiceItem(entryType, item);
       if (!result.valid) errors.items = `Item ${index + 1}: ${result.errors[0]}`;
     });
-    if (installments.length) {
-      // Cada parcela vira uma conta paga, e toda conta paga exige safra.
-      if (!header.crop_id) errors.crop_id = 'Safra obrigatória para gerar as parcelas financeiras.';
-      if (!installmentsAreValid(installments)) errors.installments = 'Preencha documento, vencimento e valor das parcelas.';
-      else if (!installmentsMatchTotal(installments, invoiceTotal)) {
-        errors.installments = 'A soma das parcelas deve ser igual ao total da nota.';
-      }
+    // Cada nota exige safra e ao menos uma parcela, conforme o contrato da API.
+    if (!header.crop_id) errors.crop_id = 'Safra obrigatória.';
+    if (!installments.length) errors.installments = 'Informe ao menos uma parcela.';
+    else if (!installmentsAreValid(installments)) {
+      errors.installments = 'Preencha documento, vencimento e valor das parcelas.';
+    } else if (!installmentsMatchTotal(installments, invoiceTotal)) {
+      errors.installments = 'A soma das parcelas deve ser igual ao total da nota.';
     }
     if (header.freight_responsibility === 'FARM_PAYABLE') {
       if (!freight.supplier_id) errors.freight = 'Informe a transportadora do frete a pagar.';
@@ -204,6 +206,10 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
     }
 
     setFieldErrors(errors);
+    if (errors.items) setActiveTab('items');
+    else if (errors.installments) setActiveTab('installments');
+    else if (errors.freight) setActiveTab('freight');
+    else if (Object.keys(errors).length) setActiveTab('header');
     return Object.keys(errors).length === 0;
   };
 
@@ -295,10 +301,23 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
         .response;
       if (response?.status === 422 && response.data?.errors) {
         const mapped: Record<string, string> = {};
+        let firstTab = 'header';
         Object.entries(response.data.errors).forEach(([key, messages]) => {
-          mapped[key] = messages?.[0] ?? 'Campo inválido.';
+          const message = messages?.[0] ?? 'Campo inválido.';
+          mapped[key] = message;
+          if (key === 'items' || key.startsWith('items.')) {
+            mapped.items = mapped.items ?? message;
+            if (firstTab === 'header') firstTab = 'items';
+          } else if (key === 'installments' || key.startsWith('installments.')) {
+            mapped.installments = mapped.installments ?? message;
+            if (firstTab === 'header') firstTab = 'installments';
+          } else if (key === 'freights' || key.startsWith('freights.')) {
+            mapped.freight = mapped.freight ?? message;
+            if (firstTab === 'header') firstTab = 'freight';
+          }
         });
         setFieldErrors(mapped);
+        setActiveTab(firstTab);
         toast.error('Revise os campos destacados.');
         return;
       }
@@ -312,6 +331,7 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
   };
 
   const error = (name: string) => fieldErrors[name];
+  const errorSummary = Array.from(new Set(Object.values(fieldErrors)));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -323,7 +343,7 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
         </DialogHeader>
 
         <div className="max-h-[72vh] overflow-y-auto pr-1">
-          <Tabs defaultValue="header">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full">
               <TabsTrigger value="header" className="flex-1">Nota</TabsTrigger>
               <TabsTrigger value="items" className="flex-1">Itens</TabsTrigger>
@@ -624,6 +644,15 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
             </TabsContent>
           </Tabs>
         </div>
+
+        {errorSummary.length > 0 && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            <p className="font-medium">Revise os campos abaixo:</p>
+            <ul className="mt-1 list-disc space-y-1 pl-5">
+              {errorSummary.map((message) => <li key={message}>{message}</li>)}
+            </ul>
+          </div>
+        )}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
