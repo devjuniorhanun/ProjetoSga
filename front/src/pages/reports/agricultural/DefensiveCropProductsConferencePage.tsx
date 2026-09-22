@@ -22,7 +22,7 @@ export default function DefensiveCropProductsConferencePage() {
   });
 
   return <div className="space-y-6">
-    <style>{`@media print { body * { visibility: hidden !important; } .defensive-crop-products-print, .defensive-crop-products-print * { visibility: visible !important; } .defensive-crop-products-print { position: absolute; inset: 0; width: 100%; } .print-hide { display: none !important; } }`}</style>
+    <style>{`@page { size: A4 landscape; margin: 10mm; } @media print { html, body { width: 297mm; min-height: 210mm; } body * { visibility: hidden !important; } .defensive-crop-products-print, .defensive-crop-products-print * { visibility: visible !important; } .defensive-crop-products-print { position: absolute; inset: 0; width: 100%; } .print-hide { display: none !important; } }`}</style>
     <div className="print-hide flex items-center justify-between">
       <div><h1 className="text-2xl font-bold">Conferência Total de Produtos por Safra</h1><p className="text-muted-foreground">Consolide todos os produtos defensivos utilizados em uma safra.</p></div>
       <Button variant="outline" disabled={!report} onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
