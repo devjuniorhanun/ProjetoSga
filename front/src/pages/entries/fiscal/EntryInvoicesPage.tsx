@@ -104,8 +104,6 @@ export default function EntryInvoicesPage({ entryType }: Props) {
             setEditing(null);
             setFormOpen(true);
           }}
-          disabled={!entryType && !typeFilter}
-          title={!entryType && !typeFilter ? 'Escolha o tipo de nota para cadastrar' : undefined}
         >
           <Plus className="mr-2 h-4 w-4" /> Nova nota
         </Button>
