@@ -55,7 +55,7 @@ export const releasesMenu: NavigationItem = {
           title: 'Defensivos',
           icon: Tractor,
           children: [
-            { id: 'releases.agricultural.defensives.orders', title: 'Ordens de Serviço', path: '/entries/agricultural/defensives', icon: Tractor, idLabel: 'OS nº {id}' },
+            { id: 'releases.agricultural.defensives.orders', title: 'Ordens de Serviços Defensivos', path: '/entries/agricultural/defensives', icon: Tractor, idLabel: 'OS nº {id}' },
             { id: 'releases.agricultural.defensives.tanks', title: 'Tanque do Operador', path: '/entries/agricultural/tanks', icon: Fuel },
             { id: 'releases.agricultural.defensives.closings', title: 'Fechamentos', path: '/entries/agricultural/defensives/closings', icon: ClipboardList },
             { id: 'releases.agricultural.defensives.consolidation', title: 'Consolidação', path: '/entries/agricultural/defensives/consolidation', icon: Layers3 },

@@ -1,4 +1,4 @@
-import { BarChart3, Building2, Grid3X3, LayoutList, Receipt, Tractor, Wheat } from 'lucide-react';
+import { BarChart3, Building2, FlaskConical, Grid3X3, LayoutList, Receipt, Tractor, Wheat } from 'lucide-react';
 import type { NavigationItem } from './navigation.types';
 
 export const reportsMenu: NavigationItem = {
@@ -14,6 +14,16 @@ export const reportsMenu: NavigationItem = {
         { id: 'reports.financial.analytical', title: 'Contas Pagas — Analítico', breadcrumb: 'Contas Pagas — Analítico', path: '/reports/financial/paid-accounts', icon: Receipt },
         { id: 'reports.financial.by-cost-center', title: 'Contas Pagas por Centro de Custo', path: '/reports/financial/paid-accounts/by-cost-center', icon: Building2 },
         { id: 'reports.financial.by-crop', title: 'Contas Pagas por Ano Agrícola e Safra', path: '/reports/financial/paid-accounts/by-crop', icon: Wheat },
+      ],
+    },
+    {
+      id: 'reports.agricultural',
+      title: 'Defensivos',
+      icon: FlaskConical,
+      children: [
+        { id: 'reports.agricultural.orders', title: 'Conferência de Ordens', path: '/reports/agricultural/defensive-orders', icon: LayoutList },
+        { id: 'reports.agricultural.products', title: 'Produtos por Operação', path: '/reports/agricultural/defensive-products', icon: FlaskConical },
+        { id: 'reports.agricultural.products-total', title: 'Total de Produtos por Safra', path: '/reports/agricultural/defensive-products-total', icon: FlaskConical },
       ],
     },
     {

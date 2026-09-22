@@ -48,6 +48,7 @@ use Illuminate\Support\Facades\Route;
 // Importa o controller de lançamento de OS de defensivos.
 
 use App\Http\Controllers\Releases\Agricultural\Services\Defensive\DefensiveServiceController;
+use App\Http\Controllers\Reports\Agricultural\DefensiveOrderReportController;
 use App\Http\Controllers\Releases\Financial\PayAccountController;
 use App\Http\Controllers\Reports\Financial\PaidAccountReportController;
 
@@ -372,6 +373,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/pdf', [PaidAccountReportController::class, 'analyticalPdf']);
         Route::get('/by-cost-center', [PaidAccountReportController::class, 'byCostCenter']);
         Route::get('/by-cost-center/pdf', [PaidAccountReportController::class, 'byCostCenterPdf']);
+    });
+
+    Route::prefix('reports/agricultural/defensive-orders')->group(function (): void {
+        Route::get('/options', [DefensiveOrderReportController::class, 'options']);
+        Route::get('/', [DefensiveOrderReportController::class, 'orders']);
+        Route::get('/products', [DefensiveOrderReportController::class, 'products']);
+        Route::get('/products-total', [DefensiveOrderReportController::class, 'totalProducts']);
     });
     
     // Módulo pai: Serviços Agrícolas. Primeiro submódulo: Defensivo.

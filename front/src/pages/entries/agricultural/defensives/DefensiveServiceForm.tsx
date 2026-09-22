@@ -290,10 +290,10 @@ export function DefensiveServiceForm({ item, onSave, onCancel }: Props) {
       };
       if (item) {
         await defensiveOrdersService.update(item.id, payload as Partial<AgriculturalDefensiveOrder>);
-        toast.success('Serviço Agrícola atualizado!');
+        toast.success('Ordem de Serviço Defensivo atualizada!');
       } else {
         await defensiveOrdersService.create(payload as unknown as Omit<AgriculturalDefensiveOrder, 'id'>);
-        toast.success('Serviço Agrícola criado!');
+        toast.success('Ordem de Serviço Defensivo criada!');
       }
       queryClient.invalidateQueries({ queryKey: ['defensive-orders'] });
       onSave();
@@ -338,7 +338,7 @@ export function DefensiveServiceForm({ item, onSave, onCancel }: Props) {
       ) : (
         <Tabs defaultValue="main" className="w-full">
           <TabsList className="w-full">
-            <TabsTrigger value="main" className="flex-1">Serviço Agrícola</TabsTrigger>
+            <TabsTrigger value="main" className="flex-1">Ordem de Serviço Defensivo</TabsTrigger>
             <TabsTrigger value="fields" className="flex-1">Talhões</TabsTrigger>
             <TabsTrigger value="operators" className="flex-1">Operadores</TabsTrigger>
             <TabsTrigger value="products" className="flex-1">Produtos</TabsTrigger>

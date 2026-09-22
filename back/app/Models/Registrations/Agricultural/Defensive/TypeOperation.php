@@ -6,7 +6,9 @@ namespace App\Models\Registrations\Agricultural\Defensive;
 // Importa uma dependência utilizada neste arquivo.
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Releases\Agricultural\Services\Defensive\AgriculturalDefensiveOrder;
 
 /**
  * Classe TypeOperation.
@@ -36,6 +38,11 @@ class TypeOperation extends Model
     public function operationDefensive(): BelongsTo
     {
         return $this->belongsTo(OperationDefensive::class, 'operation_defensive_id');
+    }
+
+    public function defensiveOrders(): HasMany
+    {
+        return $this->hasMany(AgriculturalDefensiveOrder::class, 'type_operation_id');
     }
 
     // Converte automaticamente os atributos para os tipos esperados pela aplicação.

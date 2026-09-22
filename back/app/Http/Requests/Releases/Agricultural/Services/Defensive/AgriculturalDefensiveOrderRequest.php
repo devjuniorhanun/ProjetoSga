@@ -45,8 +45,8 @@ class AgriculturalDefensiveOrderRequest extends FormRequest
             'flow' => ['required', 'numeric', 'gt:0'],
             // Valida a capacidade.
             'pump_capacity' => ['required', 'numeric', 'gt:0'],
-            // Permite status somente A ou I.
-            'status' => ['sometimes', Rule::in(['A', 'I'])],
+            // Permite os três estados funcionais da O.S.
+            'status' => ['sometimes', Rule::in(['A', 'F', 'I'])],
             // Observação operacional opcional.
             'observation' => ['nullable', 'string', 'max:2000'],
             // Exige operadores.

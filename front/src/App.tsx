@@ -59,6 +59,9 @@ import ProductivityPlotsPage from "@/pages/reports/harvest/ProductivityPlotsPage
 import ProductivityFarmsPage from "@/pages/reports/harvest/ProductivityFarmsPage";
 import ProductivityVarietiesPage from "@/pages/reports/harvest/ProductivityVarietiesPage";
 import ProductivityHarvestersPage from "@/pages/reports/harvest/ProductivityHarvestersPage";
+import DefensiveOrdersConferencePage from "@/pages/reports/agricultural/DefensiveOrdersConferencePage";
+import DefensiveProductsConferencePage from "@/pages/reports/agricultural/DefensiveProductsConferencePage";
+import DefensiveCropProductsConferencePage from "@/pages/reports/agricultural/DefensiveCropProductsConferencePage";
 import DefensiveServicesList from "@/pages/entries/agricultural/defensives/DefensiveServicesList";
 import DefensiveServiceOrder from "@/pages/entries/agricultural/defensives/DefensiveServiceOrder";
 import OperatorTankPage from "@/pages/entries/agricultural/defensives/OperatorTankPage";
@@ -224,6 +227,9 @@ const App = () => (
               <Route path="/reports/harvest/productivity/farms" element={<ProductivityFarmsPage />} />
               <Route path="/reports/harvest/productivity/varieties" element={<ProductivityVarietiesPage />} />
               <Route path="/reports/harvest/productivity/harvesters" element={<ProductivityHarvestersPage />} />
+              <Route path="/reports/agricultural/defensive-orders" element={<DefensiveOrdersConferencePage />} />
+              <Route path="/reports/agricultural/defensive-products" element={<DefensiveProductsConferencePage />} />
+              <Route path="/reports/agricultural/defensive-products-total" element={<DefensiveCropProductsConferencePage />} />
               {/* Lançamentos - Financeiro */}
               <Route path="/entries/financial/pay-accounts" element={<PayAccountsList />} />
               <Route path="/entries/financial/transfers" element={<FinancialTransfersPage />} />

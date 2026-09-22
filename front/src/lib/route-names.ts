@@ -63,7 +63,7 @@ export const routeNames: Record<string, string> = {
   'harvesters': 'Adiantamento de Colhedor',
   'transporters': 'Adiantamento de Transportador',
 
-  'defensives': 'Serviços Agrícolas',
+  'defensives': 'Ordens de Serviços Defensivos',
   'closings': 'Fechamentos',
   'consolidation': 'Consolidação',
   'tanks': 'Tanque do Operador',
@@ -139,6 +139,9 @@ export const routeNames: Record<string, string> = {
   'product-outputs': 'Saídas de Produtos',
   'grain-transfers': 'Transferências de Grãos',
   'reports': 'Relatórios',
+  'defensive-orders': 'Conferência de Ordens de Serviços Defensivos',
+  'defensive-products': 'Conferência de Produtos por Operação',
+  'defensive-products-total': 'Conferência Total de Produtos por Safra',
   'paid-accounts': 'Contas Pagas',
   'by-cost-center': 'Por Centro de Custo',
   'by-crop': 'Por Ano Agrícola/Safra',

@@ -9,7 +9,7 @@ import { formatDate } from '@/lib/utils';
 import { defensiveOrdersService, AgriculturalDefensiveOrder } from '@/lib/api-services-entries';
 import { DefensiveOrderClosingDialog } from './DefensiveOrderClosingDialog';
 
-const STATUS_LABELS: Record<string, string> = { A: 'Ativo', I: 'Inativo', F: 'Finalizada' };
+const STATUS_LABELS: Record<string, string> = { A: 'Aberta', F: 'Finalizada', I: 'Inativa' };
 
 export default function DefensiveClosingsPage() {
   const [closingOrderId, setClosingOrderId] = useState<string | null>(null);

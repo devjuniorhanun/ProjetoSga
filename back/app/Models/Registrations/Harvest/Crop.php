@@ -6,7 +6,9 @@ namespace App\Models\Registrations\Harvest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Releases\Agricultural\Services\Defensive\AgriculturalDefensiveOrder;
 
 // Representa uma safra agrícola no domínio.
 class Crop extends Model
@@ -46,5 +48,10 @@ class Crop extends Model
             Culture::class,
             'crop_culture',
         );
+    }
+
+    public function defensiveOrders(): HasMany
+    {
+        return $this->hasMany(AgriculturalDefensiveOrder::class, 'crop_id');
     }
 }

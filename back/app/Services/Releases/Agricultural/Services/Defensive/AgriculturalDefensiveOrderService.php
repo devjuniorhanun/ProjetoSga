@@ -458,7 +458,6 @@ class AgriculturalDefensiveOrderService
                 }
 
                 $pumpCapacity = round((float) $previousOrder->pump_capacity, 3);
-                $childArea = round($quantityUsed * $pumpCapacity, 3);
                 $fieldName = $parent->field?->name ?: (string) $parent->field_id;
                 $childObservation = sprintf(
                     'O.S. filha da O.S. %s, gerada a partir da O.S. anterior %s, no talhão %s.',
@@ -469,13 +468,13 @@ class AgriculturalDefensiveOrderService
 
                 $childData = [
                     'crop_id' => $parent->crop_id,
-                    'culture_id' => $parent->culture_id,
+                    'culture_id' => $parent->culture_id ?: $previousOrder->culture_id,
                     'type_operation_id' => $parent->type_operation_id,
                     'application_date' => $parent->application_date?->format('Y-m-d'),
                     'pump_volume' => $previousOrder->pump_volume,
                     'flow' => $previousOrder->flow,
                     'pump_capacity' => $pumpCapacity,
-                    'status' => 'A',
+                    'status' => 'F',
                     'observation' => $childObservation,
                     'operators' => $tankOperators->map(fn ($operator): array => [
                         'operator_id' => $operator->operator_id,
@@ -493,8 +492,32 @@ class AgriculturalDefensiveOrderService
                 // isso não consome uma nova área disponível do cadastro.
                 $child = $this->createSingleOrder($childData, [
                     'field_id' => $parent->field_id,
-                    'area' => $childArea,
+                    'area' => 0,
                 ], $parent->id, false);
+
+                // A ordem filha documenta uma reaplicação já executada. Por isso,
+                // recomendado e utilizado recebem a mesma quantidade informada.
+                $child->update([
+                    'area' => 0,
+                    'recommended_pump' => $quantityUsed,
+                    'used_bomb' => $quantityUsed,
+                    'status' => 'F',
+                ]);
+                foreach ($child->products()->get() as $childProduct) {
+                    $usedQuantity = round((float) $childProduct->pump * $quantityUsed, 3);
+                    $childProduct->update([
+                        'used_bomb' => $quantityUsed,
+                        'recommended_quantity' => $usedQuantity,
+                        'actual_quantity' => $usedQuantity,
+                        'actual_dose' => null,
+                    ]);
+                }
+                foreach ($child->operatorProducts()->get() as $operatorProduct) {
+                    $operatorProduct->update([
+                        'area' => 0,
+                        'planned_quantity' => round((float) $operatorProduct->pump * $quantityUsed, 3),
+                    ]);
+                }
 
                 AgriculturalDefensiveOrderPreviousOrder::create([
                     'order_id' => $child->id,
@@ -615,7 +638,7 @@ class AgriculturalDefensiveOrderService
             $order->update(['used_bomb' => $newUsedBomb]);
 
             if ($data['closing_type'] === 'FINAL') {
-                $order->update(['status' => 'I']);
+                $order->update(['status' => 'F']);
             }
 
             // Recompõe os saldos transportados caso o fechamento tenha sido

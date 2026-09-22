@@ -234,7 +234,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
     setLoading(true);
     try {
       await defensiveOrdersService.update(item.id, buildPayload(data) as Partial<AgriculturalDefensiveOrder>);
-      toast.success('Serviço Agrícola atualizado!');
+      toast.success('Ordem de Serviço Defensivo atualizada!');
       queryClient.invalidateQueries({ queryKey: ['defensive-orders'] });
       onSave();
     } catch (error: any) {
@@ -292,7 +292,7 @@ export function DefensiveServiceEditForm({ item, onSave, onCancel }: Props) {
       ) : (
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EditTab)} className="w-full">
           <TabsList className="w-full">
-            <TabsTrigger value="main" className="flex-1">Serviço Agrícola</TabsTrigger>
+            <TabsTrigger value="main" className="flex-1">Ordem de Serviço Defensivo</TabsTrigger>
             <TabsTrigger value="operators" className="flex-1">Operadores</TabsTrigger>
             <TabsTrigger value="products" className="flex-1">Produtos</TabsTrigger>
           </TabsList>

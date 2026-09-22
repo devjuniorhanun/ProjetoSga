@@ -58,8 +58,8 @@ export default function DefensiveServicesList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Serviços Agrícolas</h1>
-          <p className="text-muted-foreground mt-1">Gerencie os serviços agrícolas (defensivos)</p>
+          <h1 className="text-2xl font-bold">Ordens de Serviços Defensivos</h1>
+          <p className="text-muted-foreground mt-1">Gerencie as ordens de aplicação de defensivos</p>
         </div>
         <Button onClick={() => setShowCreateForm(true)}>
           <Plus className="mr-2 h-4 w-4" /> Novo
@@ -70,7 +70,7 @@ export default function DefensiveServicesList() {
         data={data}
         columns={columns}
         searchKeys={['crop_name', 'culture_name', 'field_name', 'type_operation_name']}
-        searchPlaceholder="Buscar serviço agrícola..."
+        searchPlaceholder="Buscar ordem de serviço defensivo..."
         actions={(item) => (
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8" title="Ordem de Serviço" onClick={() => navigate(`/entries/agricultural/defensives/order/${item.id}`)}>
@@ -97,7 +97,7 @@ export default function DefensiveServicesList() {
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle>Novo Serviço Agrícola</DialogTitle>
+            <DialogTitle>Nova Ordem de Serviço Defensivo</DialogTitle>
           </DialogHeader>
           <DefensiveServiceForm
             item={null}
@@ -115,7 +115,7 @@ export default function DefensiveServicesList() {
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle>Editar Serviço Agrícola</DialogTitle>
+            <DialogTitle>Editar Ordem de Serviço Defensivo</DialogTitle>
           </DialogHeader>
           {editItem && (
             <DefensiveServiceEditForm
