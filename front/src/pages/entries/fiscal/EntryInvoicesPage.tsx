@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/ui/combobox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { FiscalStatusBadge } from '@/components/fiscal/FiscalStatusBadge';
 import { EntryInvoiceFormDialog } from './EntryInvoiceFormDialog';
@@ -39,6 +40,8 @@ export default function EntryInvoicesPage({ entryType }: Props) {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [formOpen, setFormOpen] = useState(false);
+  const [typeDialogOpen, setTypeDialogOpen] = useState(false);
+  const [newEntryType, setNewEntryType] = useState<FiscalEntryType>('GENERAL');
   const [editing, setEditing] = useState<EntryInvoice | null>(null);
   const [confirming, setConfirming] = useState<EntryInvoice | null>(null);
   const [removing, setRemoving] = useState<EntryInvoice | null>(null);
@@ -102,7 +105,12 @@ export default function EntryInvoicesPage({ entryType }: Props) {
         <Button
           onClick={() => {
             setEditing(null);
-            setFormOpen(true);
+            if (entryType) {
+              setNewEntryType(entryType);
+              setFormOpen(true);
+              return;
+            }
+            setTypeDialogOpen(true);
           }}
         >
           <Plus className="mr-2 h-4 w-4" /> Nova nota
@@ -208,9 +216,33 @@ export default function EntryInvoicesPage({ entryType }: Props) {
       <EntryInvoiceFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        entryType={(editing?.entry_type ?? entryType ?? (typeFilter as FiscalEntryType)) || 'GENERAL'}
+        entryType={editing?.entry_type ?? entryType ?? newEntryType}
         invoice={editing}
       />
+
+      <Dialog open={typeDialogOpen} onOpenChange={setTypeDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Selecione o tipo da nota de entrada</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {(Object.entries(ENTRY_TYPE_LABELS) as Array<[FiscalEntryType, string]>).map(([value, label]) => (
+              <Button
+                key={value}
+                variant="outline"
+                className="h-auto justify-start py-4 text-left"
+                onClick={() => {
+                  setNewEntryType(value);
+                  setTypeDialogOpen(false);
+                  setFormOpen(true);
+                }}
+              >
+                Nota de {label}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={!!confirming}

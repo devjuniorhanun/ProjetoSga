@@ -39,6 +39,12 @@ export const releasesMenu: NavigationItem = {
       icon: FileText,
       children: [
         { id: 'releases.fiscal.all', title: 'Todas as Notas', path: '/entries/fiscal/entry-invoices', icon: FileText, idLabel: 'Nota nº {id}' },
+        { id: 'releases.fiscal.general', title: 'Produtos Gerais', path: '/entries/fiscal/entry-invoices/general', icon: Package },
+        { id: 'releases.fiscal.defensive', title: 'Defensivos', path: '/entries/fiscal/entry-invoices/defensive', icon: ShieldCheck },
+        { id: 'releases.fiscal.fuel', title: 'Combustíveis', path: '/entries/fiscal/entry-invoices/fuel', icon: Fuel },
+        { id: 'releases.fiscal.lubricant', title: 'Lubrificantes', path: '/entries/fiscal/entry-invoices/lubricant', icon: Droplets },
+        { id: 'releases.fiscal.seed', title: 'Sementes', path: '/entries/fiscal/entry-invoices/seed', icon: Wheat },
+        { id: 'releases.fiscal.input', title: 'Insumos', path: '/entries/fiscal/entry-invoices/input', icon: Boxes },
         { id: 'releases.fiscal.freights', title: 'Fretes das Notas', path: '/entries/fiscal/freights', icon: Truck },
         { id: 'releases.fiscal.freight-payments', title: 'Pagamentos de Fretes', path: '/entries/fiscal/freight-payments', icon: Building2 },
         { id: 'releases.fiscal.purchase-returns', title: 'Devoluções de Compra', path: '/entries/fiscal/purchase-returns', icon: ArrowRightLeft },
