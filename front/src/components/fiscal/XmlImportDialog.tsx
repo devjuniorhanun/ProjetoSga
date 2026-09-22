@@ -11,19 +11,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { entryInvoicesService } from '@/lib/api-services-fiscal';
 import { useFiscalOptions } from '@/hooks/use-fiscal-options';
 import { formatCurrencyBRL } from '@/lib/format-helpers';
-import type { XmlImportPreview } from '@/types/fiscal';
+import type { FiscalEntryType, XmlImportPreview } from '@/types/fiscal';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Recebe a prévia já revisada para preencher o formulário da nota. */
   onUse: (preview: XmlImportPreview) => void;
+  entryType: FiscalEntryType;
 }
 
-export function XmlImportDialog({ open, onOpenChange, onUse }: Props) {
+export function XmlImportDialog({ open, onOpenChange, onUse, entryType }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<XmlImportPreview | null>(null);
-  const options = useFiscalOptions();
+  const options = useFiscalOptions(entryType);
 
   const previewMutation = useMutation({
     mutationFn: (selected: File) => entryInvoicesService.previewXml(selected),
@@ -35,12 +36,15 @@ export function XmlImportDialog({ open, onOpenChange, onUse }: Props) {
     mutationFn: ({ itemId, productId }: { itemId: string; productId: string }) =>
       entryInvoicesService.linkImportItem(itemId, productId),
     onSuccess: (_data, variables) => {
+      const product = options.products.find((item) => String(item.id) === variables.productId);
       setPreview((prev) =>
         prev
           ? {
               ...prev,
               items: prev.items.map((item) =>
-                item.id === variables.itemId ? { ...item, product_id: variables.productId, linked: true } : item,
+                item.id === variables.itemId
+                  ? { ...item, product_id: variables.productId, product_name: product?.name, unit: product?.unit, linked: true }
+                  : item,
               ),
             }
           : prev,

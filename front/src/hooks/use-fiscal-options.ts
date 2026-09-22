@@ -1,17 +1,38 @@
 import { useQuery } from '@tanstack/react-query';
-import { suppliersService, producersService, farmsService, fieldsService, culturesService, varietiesService, cropsService } from '@/lib/api-services';
+import { suppliersService, typeSuppliersService, producersService, farmsService, fieldsService, culturesService, varietiesService, cropsService } from '@/lib/api-services';
 import { costCentersService } from '@/lib/api-services-financial';
 import { getAdministrativeCentersByProducer } from '@/lib/api-services-financial';
 import { productsService } from '@/lib/api-services-products';
 import { stockLocationsService, freightRatesService } from '@/lib/api-services-inventory';
 import { typePayAccountsService } from '@/lib/api-services-financial-entries';
 import type { ComboboxOption } from '@/components/ui/combobox';
+import type { FiscalEntryType } from '@/types/fiscal';
 
 const active = <T extends { status?: string }>(rows: T[]) => rows.filter((r) => !r.status || r.status === 'A');
 
+const normalizeCatalogName = (value?: string | null) =>
+  String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+
+const supplierTypeByEntry: Partial<Record<FiscalEntryType, string>> = {
+  DEFENSIVE: 'INSUMOS',
+  FUEL: 'COMBUSTIVEIS',
+  LUBRICANT: 'LUBRIFICANTES',
+  SEED: 'SEMENTES',
+  INPUT: 'INSUMO',
+};
+
+const productGroupByEntry: Partial<Record<FiscalEntryType, string>> = {
+  DEFENSIVE: 'QUIMICOS',
+  FUEL: 'COMBUSTIVEIS',
+  LUBRICANT: 'LUBRIFICANTES',
+  SEED: 'SEMENTES',
+  INPUT: 'INSUMO',
+};
+
 /** Listas de apoio compartilhadas pelas telas fiscais, de estoque e de frete. */
-export function useFiscalOptions() {
+export function useFiscalOptions(entryType?: FiscalEntryType) {
   const suppliers = useQuery({ queryKey: ['suppliers'], queryFn: suppliersService.getAll });
+  const supplierTypes = useQuery({ queryKey: ['type-suppliers'], queryFn: typeSuppliersService.getAll });
   const producers = useQuery({ queryKey: ['producers'], queryFn: producersService.getAll });
   const costCenters = useQuery({ queryKey: ['cost-centers'], queryFn: costCentersService.getAll });
   const farms = useQuery({ queryKey: ['farms'], queryFn: farmsService.getAll });
@@ -30,7 +51,23 @@ export function useFiscalOptions() {
   });
   const typePayAccounts = useQuery({ queryKey: ['type-pay-accounts'], queryFn: typePayAccountsService.getAll });
 
-  const supplierOptions: ComboboxOption[] = active(suppliers.data ?? []).map((s) => ({
+  const requiredSupplierType = entryType ? supplierTypeByEntry[entryType] : undefined;
+  const allowedSupplierTypeIds = new Set(
+    active(supplierTypes.data ?? [])
+      .filter((type) => !requiredSupplierType || normalizeCatalogName(type.name) === requiredSupplierType)
+      .map((type) => String(type.id)),
+  );
+  const filteredSuppliers = active(suppliers.data ?? []).filter(
+    (supplier) =>
+      !requiredSupplierType ||
+      (supplier.type_supplier_ids ?? supplier.typeSuppliers ?? []).some((id) => allowedSupplierTypeIds.has(String(id))),
+  );
+  const requiredProductGroup = entryType ? productGroupByEntry[entryType] : undefined;
+  const filteredProducts = active(products.data ?? []).filter(
+    (product) => !requiredProductGroup || normalizeCatalogName(product.group_product_name) === requiredProductGroup,
+  );
+
+  const supplierOptions: ComboboxOption[] = filteredSuppliers.map((s) => ({
     value: String(s.id),
     label: s.corporate_reason || s.fantasy_name || String(s.id),
   }));
@@ -50,7 +87,7 @@ export function useFiscalOptions() {
     value: String(f.id),
     label: f.name || String(f.id),
   }));
-  const productOptions: ComboboxOption[] = active(products.data ?? []).map((p) => ({
+  const productOptions: ComboboxOption[] = filteredProducts.map((p) => ({
     value: String(p.id),
     label: p.name || String(p.id),
   }));
@@ -93,11 +130,12 @@ export function useFiscalOptions() {
     varietyOptions,
     typePayAccountOptions,
     varietiesByCulture,
+    products: filteredProducts,
     stockLocations: stockLocations.data ?? [],
     varieties: varieties.data ?? [],
     freightRates: freightRates.data ?? [],
     isLoading:
-      suppliers.isLoading || producers.isLoading || products.isLoading || stockLocations.isLoading,
+      suppliers.isLoading || supplierTypes.isLoading || producers.isLoading || products.isLoading || stockLocations.isLoading,
   };
 }
 

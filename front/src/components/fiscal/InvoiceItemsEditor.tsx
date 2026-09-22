@@ -37,7 +37,7 @@ export function InvoiceItemsEditor({ entryType, items, onChange, disabled }: Pro
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<EntryInvoiceItem>(emptyItem());
   const [errors, setErrors] = useState<string[]>([]);
-  const options = useFiscalOptions();
+  const options = useFiscalOptions(entryType);
   const isSeed = entryType === 'SEED';
   const isDefensive = entryType === 'DEFENSIVE';
   const isFuelOrLubricant = entryType === 'FUEL' || entryType === 'LUBRICANT';
@@ -180,10 +180,12 @@ export function InvoiceItemsEditor({ entryType, items, onChange, disabled }: Pro
                   value={draft.product_id}
                   onValueChange={(value) => {
                     const product = options.productOptions.find((item) => item.value === value);
+                    const productData = options.products.find((item) => String(item.id) === value);
                     setDraft((prev) => ({
                       ...prev,
                       product_id: value,
                       description: prev.description || product?.label || '',
+                      unit: productData?.unit ?? '',
                     }));
                   }}
                   placeholder="Selecione o produto"

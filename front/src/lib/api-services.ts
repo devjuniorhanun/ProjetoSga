@@ -117,6 +117,7 @@ export interface MatrixFreight {
 export interface TypeSupplier {
   id: string;
   name: string;
+  code?: string;
   status: 'A' | 'I';
 }
 

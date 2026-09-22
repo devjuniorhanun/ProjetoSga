@@ -17,6 +17,7 @@ class EntryInvoiceService
 
     public function save(array $data, int $userId, ?EntryInvoice $invoice = null): EntryInvoice
     {
+        $this->assertCatalogCompatibility($data);
         $freightCropIds = collect($data['freights'] ?? [])->pluck('crop_id')->filter()->map(fn ($id): int => (int) $id)->unique()->values();
         if (isset($data['crop_id']) && $freightCropIds->contains(fn (int $id): bool => $id !== (int) $data['crop_id'])) {
             throw ValidationException::withMessages(['freights' => ['Todos os fretes devem pertencer à safra informada na nota.']]);
@@ -38,6 +39,58 @@ class EntryInvoiceService
             $this->saveChildren($invoice, $data, $userId);
             return $invoice->refresh()->load(['items.allocations','items.seedLots','installments','freights']);
         });
+    }
+
+    private function assertCatalogCompatibility(array $data): void
+    {
+        $supplierTypes = [
+            'DEFENSIVE' => ['label' => 'INSUMOS', 'names' => ['INSUMOS']],
+            'FUEL' => ['label' => 'COMBUSTÍVEIS', 'names' => ['COMBUSTÍVEIS', 'COMBUSTIVEIS']],
+            'LUBRICANT' => ['label' => 'LUBRIFICANTES', 'names' => ['LUBRIFICANTES']],
+            'SEED' => ['label' => 'SEMENTES', 'names' => ['SEMENTES']],
+            'INPUT' => ['label' => 'INSUMO', 'names' => ['INSUMO']],
+        ];
+        $productGroups = [
+            'DEFENSIVE' => ['label' => 'QUÍMICOS', 'names' => ['QUÍMICOS', 'QUIMICOS']],
+            'FUEL' => ['label' => 'COMBUSTÍVEIS', 'names' => ['COMBUSTÍVEIS', 'COMBUSTIVEIS']],
+            'LUBRICANT' => ['label' => 'LUBRIFICANTES', 'names' => ['LUBRIFICANTES']],
+            'SEED' => ['label' => 'SEMENTES', 'names' => ['SEMENTES']],
+            'INPUT' => ['label' => 'INSUMO', 'names' => ['INSUMO']],
+        ];
+        $entryType = $data['entry_type'];
+
+        if (isset($supplierTypes[$entryType])) {
+            $supplierIsValid = DB::table('suppliers as suppliers')
+                ->join('supplier_type_supplier as pivot', 'pivot.supplier_id', '=', 'suppliers.id')
+                ->join('type_suppliers as types', 'types.id', '=', 'pivot.type_supplier_id')
+                ->where('suppliers.id', $data['supplier_id'])
+                ->where('suppliers.status', 'A')
+                ->whereNull('suppliers.deleted_at')
+                ->whereIn('types.name', $supplierTypes[$entryType]['names'])
+                ->where('types.status', 'A')
+                ->whereNull('types.deleted_at')
+                ->exists();
+            if (! $supplierIsValid) {
+                throw ValidationException::withMessages(['supplier_id' => ['Selecione um fornecedor ativo do tipo '.$supplierTypes[$entryType]['label'].'.']]);
+            }
+        }
+
+        if (isset($productGroups[$entryType])) {
+            foreach ($data['items'] as $index => $item) {
+                $productIsValid = DB::table('products as products')
+                    ->join('product_groups as groups', 'groups.id', '=', 'products.product_group_id')
+                    ->where('products.id', $item['product_id'])
+                    ->where('products.status', 'A')
+                    ->whereNull('products.deleted_at')
+                    ->whereIn('groups.name', $productGroups[$entryType]['names'])
+                    ->where('groups.status', 'A')
+                    ->whereNull('groups.deleted_at')
+                    ->exists();
+                if (! $productIsValid) {
+                    throw ValidationException::withMessages(["items.{$index}.product_id" => ['Selecione um produto ativo do grupo '.$productGroups[$entryType]['label'].'.']]);
+                }
+            }
+        }
     }
 
     public function confirm(EntryInvoice $invoice, int $userId): EntryInvoice

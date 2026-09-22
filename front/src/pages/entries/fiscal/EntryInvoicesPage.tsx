@@ -32,7 +32,7 @@ interface Props {
 
 export default function EntryInvoicesPage({ entryType }: Props) {
   const queryClient = useQueryClient();
-  const options = useFiscalOptions();
+  const options = useFiscalOptions(entryType);
   const [status, setStatus] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [supplierId, setSupplierId] = useState('');

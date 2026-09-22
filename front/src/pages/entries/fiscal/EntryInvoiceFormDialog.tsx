@@ -85,7 +85,7 @@ const emptyHeader = (): HeaderState => ({
 
 export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice }: Props) {
   const queryClient = useQueryClient();
-  const options = useFiscalOptions();
+  const options = useFiscalOptions(entryType);
   const [header, setHeader] = useState<HeaderState>(emptyHeader());
   const [items, setItems] = useState<EntryInvoiceItem[]>([]);
   const [installments, setInstallments] = useState<EntryInvoiceInstallment[]>([]);
@@ -666,6 +666,7 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
         <XmlImportDialog
           open={xmlOpen}
           onOpenChange={setXmlOpen}
+          entryType={entryType}
           onUse={(preview) => {
             setEntryMethod('XML_IMPORT');
             setHeader((prev) => ({
@@ -677,20 +678,23 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
               supplier_id: preview.supplier_id ? String(preview.supplier_id) : prev.supplier_id,
             }));
             setItems(
-              preview.items.map((item) => ({
-                product_id: String(item.product_id ?? ''),
-                product_name: item.product_name ?? undefined,
-                supplier_product_code: item.supplier_product_code ?? null,
-                description: item.description,
-                ncm: item.ncm ?? null,
-                cfop: item.cfop ?? null,
-                unit: item.unit ?? '',
-                quantity: item.quantity,
-                unit_value: item.unit_value,
-                discount_value: 0,
-                addition_value: 0,
-                destinations: [],
-              })),
+              preview.items.map((item) => {
+                const product = options.products.find((candidate) => String(candidate.id) === String(item.product_id));
+                return {
+                  product_id: String(item.product_id ?? ''),
+                  product_name: product?.name ?? item.product_name ?? undefined,
+                  supplier_product_code: item.supplier_product_code ?? null,
+                  description: item.description,
+                  ncm: item.ncm ?? null,
+                  cfop: item.cfop ?? null,
+                  unit: product?.unit ?? item.unit ?? '',
+                  quantity: item.quantity,
+                  unit_value: item.unit_value,
+                  discount_value: 0,
+                  addition_value: 0,
+                  destinations: [],
+                };
+              }),
             );
             toast.info('Dados do XML carregados. Informe os destinos de cada item antes de salvar.');
           }}
