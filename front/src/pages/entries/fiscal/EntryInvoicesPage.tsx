@@ -208,7 +208,7 @@ export default function EntryInvoicesPage({ entryType }: Props) {
       <EntryInvoiceFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        entryType={(entryType ?? (typeFilter as FiscalEntryType)) || 'GENERAL'}
+        entryType={(editing?.entry_type ?? entryType ?? (typeFilter as FiscalEntryType)) || 'GENERAL'}
         invoice={editing}
       />
 

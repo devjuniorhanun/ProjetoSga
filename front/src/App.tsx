@@ -98,7 +98,6 @@ import ProfilePage from "@/pages/profile/ProfilePage";
 import ConfigsList from "@/pages/registrations/admin/configs/ConfigsList";
 import LegacyImportPage from "@/pages/registrations/admin/imports/LegacyImportPage";
 import StockLocationsList from "@/pages/registrations/inventory/StockLocationsList";
-import ProductStockProfilesList from "@/pages/registrations/inventory/ProductStockProfilesList";
 import SeedProductProfilesList from "@/pages/registrations/inventory/SeedProductProfilesList";
 import AgriculturalServiceTypesList from "@/pages/registrations/inventory/AgriculturalServiceTypesList";
 import FreightRatesList from "@/pages/registrations/inventory/FreightRatesList";
@@ -263,7 +262,6 @@ const App = () => (
               <Route path="/entries/fleet/maintenance-records" element={<FleetMaintenanceRecordsList />} />
               {/* Cadastros - Estoque */}
               <Route path="/registrations/inventory/stock-locations" element={<StockLocationsList />} />
-              <Route path="/registrations/inventory/product-stock-profiles" element={<ProductStockProfilesList />} />
               <Route path="/registrations/inventory/seed-product-profiles" element={<SeedProductProfilesList />} />
               <Route path="/registrations/inventory/agricultural-service-types" element={<AgriculturalServiceTypesList />} />
               <Route path="/registrations/inventory/freight-rates" element={<FreightRatesList />} />

@@ -36,7 +36,6 @@ vi.mock('@/hooks/use-fiscal-options', () => ({
     typePayAccountOptions: [],
     varietiesByCulture: () => [],
     stockLocations: [],
-    stockProfiles: [],
     freightRates: [],
     isLoading: false,
   }),

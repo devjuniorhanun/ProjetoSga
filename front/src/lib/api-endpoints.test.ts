@@ -41,7 +41,6 @@ import {
   INVENTORY_BASE,
   agriculturalServiceTypesService,
   freightRatesService,
-  productStockProfilesService,
   seedProductProfilesService,
   stockLocationsService,
 } from './api-services-inventory';
@@ -92,7 +91,6 @@ describe('rotas canônicas do backend', () => {
   it('catálogos de estoque', () => {
     expect(INVENTORY_BASE).toBe('/registrations/inventory');
     expect(stockLocationsService.endpoint).toBe('/registrations/inventory/stock-locations');
-    expect(productStockProfilesService.endpoint).toBe('/registrations/inventory/product-stock-profiles');
     expect(seedProductProfilesService.endpoint).toBe('/registrations/inventory/seed-product-profiles');
     expect(agriculturalServiceTypesService.endpoint).toBe(
       '/registrations/inventory/agricultural-service-types',

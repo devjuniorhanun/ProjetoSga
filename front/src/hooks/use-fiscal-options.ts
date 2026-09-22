@@ -3,7 +3,7 @@ import { suppliersService, producersService, farmsService, fieldsService, cultur
 import { costCentersService } from '@/lib/api-services-financial';
 import { getAdministrativeCentersByProducer } from '@/lib/api-services-financial';
 import { productsService } from '@/lib/api-services-products';
-import { stockLocationsService, productStockProfilesService, freightRatesService } from '@/lib/api-services-inventory';
+import { stockLocationsService, freightRatesService } from '@/lib/api-services-inventory';
 import { typePayAccountsService } from '@/lib/api-services-financial-entries';
 import type { ComboboxOption } from '@/components/ui/combobox';
 
@@ -23,10 +23,6 @@ export function useFiscalOptions() {
   const stockLocations = useQuery({
     queryKey: ['stock-locations', 'options'],
     queryFn: () => stockLocationsService.getAll({ per_page: 200, status: 'A' }),
-  });
-  const stockProfiles = useQuery({
-    queryKey: ['product-stock-profiles', 'options'],
-    queryFn: () => productStockProfilesService.getAll({ per_page: 200, status: 'A' }),
   });
   const freightRates = useQuery({
     queryKey: ['freight-rates', 'options'],
@@ -70,6 +66,10 @@ export function useFiscalOptions() {
     value: String(l.id),
     label: l.name || String(l.id),
   }));
+  const varietyOptions: ComboboxOption[] = active(varieties.data ?? []).map((v) => ({
+    value: String(v.id),
+    label: v.name || String(v.id),
+  }));
   const typePayAccountOptions: ComboboxOption[] = active(typePayAccounts.data ?? []).map((t) => ({
     value: String(t.id),
     label: t.name || String(t.id),
@@ -90,10 +90,11 @@ export function useFiscalOptions() {
     cultureOptions,
     cropOptions,
     stockLocationOptions,
+    varietyOptions,
     typePayAccountOptions,
     varietiesByCulture,
     stockLocations: stockLocations.data ?? [],
-    stockProfiles: stockProfiles.data ?? [],
+    varieties: varieties.data ?? [],
     freightRates: freightRates.data ?? [],
     isLoading:
       suppliers.isLoading || producers.isLoading || products.isLoading || stockLocations.isLoading,

@@ -103,7 +103,14 @@ describe('validação por tipo de nota', () => {
       'SEED',
       baseItem({
         destinations: [
-          { culture_id: '1', variety_id: '2', batch: 'L-1', stock_location_id: '9', quantity: 10 },
+          {
+            culture_id: '1',
+            variety_culture_id: '2',
+            batch: 'L-1',
+            sieve: '5,5',
+            stock_location_id: '9',
+            quantity: 10,
+          },
         ],
       }),
     );
@@ -111,14 +118,13 @@ describe('validação por tipo de nota', () => {
   });
 
   it('insumo aceita destino em talhão sem local de estoque', () => {
-    const result = validateInvoiceItem('INPUT', baseItem({ destinations: [{ field_id: '5', quantity: 10 }] }));
+    const result = validateInvoiceItem('INPUT', baseItem({ destinations: [{ plot_field_id: '5', quantity: 10 }] }));
     expect(result.valid).toBe(true);
   });
 
   it('combustível só aceita local de posto compatível', () => {
-    expect(isCompatibleFuelLocation({ id: '1', location_type: 'FUEL_POST' }, { invoice_type: 'FUEL' })).toBe(true);
-    expect(isCompatibleFuelLocation({ id: '2', location_type: 'WAREHOUSE' }, { invoice_type: 'FUEL' })).toBe(false);
-    expect(isCompatibleFuelLocation({ id: '1', location_type: 'FUEL_POST' }, { invoice_type: 'SEED' })).toBe(false);
+    expect(isCompatibleFuelLocation({ id: '1', location_type: 'FUEL_STATION' })).toBe(true);
+    expect(isCompatibleFuelLocation({ id: '2', location_type: 'WAREHOUSE' })).toBe(false);
   });
 });
 

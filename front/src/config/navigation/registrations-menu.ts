@@ -105,7 +105,6 @@ export const registrationsMenu: NavigationItem = {
         { id: 'registrations.products.supplier-products', title: 'Produtos por Fornecedor', path: '/registrations/products/supplier-products', icon: ShoppingCart },
         { id: 'registrations.products.purpose', title: 'Finalidade de Produtos', path: '/registrations/products/purpose-products', icon: Target, hidden: true },
         { id: 'registrations.products.stock-locations', title: 'Locais de Estoque', path: '/registrations/inventory/stock-locations', icon: Boxes },
-        { id: 'registrations.products.stock-profiles', title: 'Perfis de Estoque', path: '/registrations/inventory/product-stock-profiles', icon: Box },
         { id: 'registrations.products.seed-profiles', title: 'Perfis de Sementes', path: '/registrations/inventory/seed-product-profiles', icon: Wheat },
       ],
     },

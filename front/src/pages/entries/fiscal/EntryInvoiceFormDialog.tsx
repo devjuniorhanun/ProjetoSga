@@ -46,7 +46,6 @@ interface HeaderState {
   producer_id: string;
   administrative_center_id: string;
   cost_center_id: string;
-  farm_id: string;
   crop_id: string;
   access_key: string;
   document_model: string;
@@ -68,7 +67,6 @@ const emptyHeader = (): HeaderState => ({
   producer_id: '',
   administrative_center_id: '',
   cost_center_id: '',
-  farm_id: '',
   crop_id: '',
   access_key: '',
   document_model: '',
@@ -106,7 +104,6 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
         producer_id: String(invoice.producer_id ?? ''),
         administrative_center_id: String(invoice.administrative_center_id ?? ''),
         cost_center_id: String(invoice.cost_center_id ?? ''),
-        farm_id: invoice.farm_id ? String(invoice.farm_id) : '',
         crop_id: invoice.crop_id ? String(invoice.crop_id) : '',
         access_key: invoice.access_key ?? '',
         document_model: invoice.document_model ?? '',
@@ -122,9 +119,20 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
         freight_responsibility: invoice.freight_responsibility ?? 'NO_FREIGHT',
         observation: invoice.observation ?? '',
       });
-      setItems(invoice.items ?? []);
+      setItems(
+        (invoice.items ?? []).map((item) => ({
+          ...item,
+          destinations:
+            entryType === 'SEED'
+              ? (item.seed_lots ?? []).map((lot) => ({
+                  ...lot,
+                  batch: lot.lot_number ?? lot.batch,
+                }))
+              : item.allocations ?? item.destinations ?? [],
+        })),
+      );
       setInstallments(invoice.installments ?? []);
-      setFreight(invoice.freight ?? {});
+      setFreight(invoice.freights?.[0] ?? invoice.freight ?? {});
       setEntryMethod(invoice.entry_method === 'XML_IMPORT' ? 'XML_IMPORT' : 'MANUAL');
     } else {
       setHeader(emptyHeader());
@@ -134,7 +142,7 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
       setEntryMethod('MANUAL');
     }
     setFieldErrors({});
-  }, [open, invoice]);
+  }, [open, invoice, entryType]);
 
   const productsTotal = useMemo(() => productsValue(items), [items]);
   const invoiceTotal = useMemo(
@@ -189,13 +197,46 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
     }
     if (header.freight_responsibility === 'FARM_PAYABLE') {
       if (!freight.supplier_id) errors.freight = 'Informe a transportadora do frete a pagar.';
+      else if (!freight.product_id) errors.freight = 'Informe o produto transportado.';
       else if (!freight.value_per_ton) errors.freight = 'Informe o valor por tonelada.';
+      else if (!freight.invoice_weight) errors.freight = 'Informe o peso da nota.';
       else if (!freight.crop_id) errors.freight = 'Informe a safra do frete.';
     }
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
+
+  const payloadItems = items.map(({ destinations, ...item }) => ({
+    ...item,
+    other_expenses_value: item.addition_value ?? 0,
+    allocations:
+      entryType === 'SEED'
+        ? undefined
+        : destinations.map((destination) => ({
+            stock_location_id: destination.stock_location_id,
+            plot_field_id: destination.plot_field_id,
+            fuel_station_id: destination.fuel_station_id,
+            batch: destination.batch || '',
+            manufacturing_date: destination.manufacturing_date || null,
+            expiration_date: destination.expiration_date || null,
+            quantity: destination.quantity,
+          })),
+    seed_lots:
+      entryType === 'SEED'
+        ? destinations.map((lot) => ({
+            culture_id: lot.culture_id,
+            variety_culture_id: lot.variety_culture_id,
+            stock_location_id: lot.stock_location_id,
+            lot_number: lot.batch,
+            sieve: lot.sieve,
+            quantity: lot.quantity,
+            unit: item.unit,
+            manufacturing_date: lot.manufacturing_date || null,
+            expiration_date: lot.expiration_date || null,
+          }))
+        : undefined,
+  }));
 
   const buildPayload = (): EntryInvoicePayload => ({
     entry_type: entryType,
@@ -204,7 +245,6 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
     producer_id: header.producer_id,
     administrative_center_id: header.administrative_center_id,
     cost_center_id: header.cost_center_id,
-    farm_id: header.farm_id || null,
     crop_id: header.crop_id || null,
     access_key: header.access_key || null,
     document_model: header.document_model || null,
@@ -221,9 +261,25 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
     invoice_total: invoiceTotal,
     freight_responsibility: header.freight_responsibility,
     observation: header.observation || null,
-    items,
+    items: payloadItems,
     installments,
-    freight: header.freight_responsibility === 'FARM_PAYABLE' ? freight : null,
+    freights:
+      header.freight_responsibility === 'FARM_PAYABLE'
+        ? [
+            {
+              product_id: String(freight.product_id),
+              crop_id: String(freight.crop_id),
+              carrier_id: String(freight.supplier_id),
+              freight_rate_id: freight.freight_rate_id || null,
+              driver_name: freight.driver_name || null,
+              driver_cpf: freight.driver_document || null,
+              driver_phone: freight.driver_phone || null,
+              vehicle_plate: freight.plate || null,
+              invoice_weight: Number(freight.invoice_weight),
+              value_per_ton: Number(freight.value_per_ton),
+            },
+          ]
+        : [],
   });
 
   const saveMutation = useMutation({
@@ -327,15 +383,6 @@ export function EntryInvoiceFormDialog({ open, onOpenChange, entryType, invoice 
                     placeholder="Selecione"
                   />
                   {error('cost_center_id') && <p className="text-sm text-destructive">{error('cost_center_id')}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label>Fazenda (opcional)</Label>
-                  <Combobox
-                    options={options.farmOptions}
-                    value={header.farm_id}
-                    onValueChange={(v) => setField('farm_id', v)}
-                    placeholder="Selecione"
-                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Safra</Label>

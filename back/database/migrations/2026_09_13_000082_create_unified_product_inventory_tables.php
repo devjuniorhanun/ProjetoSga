@@ -35,19 +35,6 @@ return new class extends Migration
             $table->index(['location_type', 'status'], 'stock_location_type_status');
         });
 
-        Schema::create('product_stock_profiles', function (Blueprint $table): void {
-            $table->id();
-            $table->foreignId('product_id')->unique()->constrained()->cascadeOnDelete();
-            $table->string('invoice_entry_type', 30);
-            $table->string('default_destination_type', 30);
-            $table->boolean('controls_stock')->default(true);
-            $table->boolean('allows_freight')->default(false);
-            $table->boolean('requires_batch')->default(false);
-            $table->boolean('requires_expiration_date')->default(false);
-            $table->char('status', 1)->default('A');
-            $table->timestamps();
-        });
-
         Schema::create('seed_product_profiles', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('product_id')->unique()->constrained()->cascadeOnDelete();
@@ -112,7 +99,6 @@ return new class extends Migration
         Schema::dropIfExists('product_stock_movements');
         Schema::dropIfExists('product_stocks');
         Schema::dropIfExists('seed_product_profiles');
-        Schema::dropIfExists('product_stock_profiles');
         Schema::dropIfExists('stock_locations');
         Schema::dropIfExists('document_sequences');
     }

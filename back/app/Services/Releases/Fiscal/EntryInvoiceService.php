@@ -60,19 +60,26 @@ class EntryInvoiceService
             if (!$centerValid) throw ValidationException::withMessages(['administrative_center_id'=>['O centro administrativo deve estar ativo e pertencer ao produtor.']]);
 
             foreach ($invoice->items as $item) {
-                $profile = DB::table('product_stock_profiles')->where('product_id',$item->product_id)->where('status','A')->first();
-                if (!$profile || $profile->invoice_entry_type !== $invoice->entry_type) throw ValidationException::withMessages(['items'=>["O produto {$item->description} não é compatível com o tipo da nota."]]);
                 if ($item->supplier_product_id && !DB::table('supplier_products')->where('id',$item->supplier_product_id)->where('supplier_id',$invoice->supplier_id)->where('product_id',$item->product_id)->where('status','A')->exists()) throw ValidationException::withMessages(['items'=>['O código do fornecedor não está relacionado ao produto informado.']]);
                 if ($invoice->entry_type === 'SEED') {
                     if (abs((float)$item->seedLots->sum('quantity')-(float)$item->quantity)>.001) throw ValidationException::withMessages(['items'=>['A soma dos lotes deve ser igual à quantidade do item.']]);
-                    foreach ($item->seedLots as $lot) $this->stocks->entry(['product_id'=>$item->product_id,'stock_location_id'=>$lot->stock_location_id,'batch'=>$lot->lot_number,'expiration_date'=>$lot->expiration_date,'treatment_status'=>'UNTREATED','quantity'=>$lot->quantity,'unit_value'=>$item->unit_value,'movement_type'=>'INVOICE_ENTRY','source_type'=>EntryInvoice::class,'source_id'=>$invoice->id,'created_by'=>$userId]);
+                    foreach ($item->seedLots as $lot) {
+                        $varietyMatchesCulture = DB::table('variety_cultures')->where('id',$lot->variety_culture_id)->where('culture_id',$lot->culture_id)->exists();
+                        if (!$varietyMatchesCulture) throw ValidationException::withMessages(['items'=>['A variedade selecionada não pertence à cultura informada.']]);
+                        $this->stocks->entry(['product_id'=>$item->product_id,'stock_location_id'=>$lot->stock_location_id,'batch'=>$lot->lot_number,'expiration_date'=>$lot->expiration_date,'treatment_status'=>'UNTREATED','quantity'=>$lot->quantity,'unit_value'=>$item->unit_value,'movement_type'=>'INVOICE_ENTRY','source_type'=>EntryInvoice::class,'source_id'=>$invoice->id,'created_by'=>$userId]);
+                    }
                 } else {
                     if (abs((float)$item->allocations->sum('quantity')-(float)$item->quantity)>.001) throw ValidationException::withMessages(['items'=>['A soma dos destinos deve ser igual à quantidade do item.']]);
                     foreach ($item->allocations as $allocation) {
                         $location = DB::table('stock_locations')->where('id',$allocation->stock_location_id)->where('status','A')->first();
                         if (!$location) throw ValidationException::withMessages(['stock_location_id'=>['Local de estoque inválido.']]);
-                        if ($invoice->entry_type === 'FUEL') {
+                        if ($invoice->entry_type === 'DEFENSIVE' && (!$allocation->batch || !$allocation->manufacturing_date || !$allocation->expiration_date || $allocation->expiration_date < $allocation->manufacturing_date)) throw ValidationException::withMessages(['items'=>['Defensivos exigem lote, data de fabricação e data de vencimento válida.']]);
+                        if (in_array($invoice->entry_type, ['FUEL','LUBRICANT'], true)) {
                             if (!$allocation->fuel_station_id || (int)$location->fuel_station_id !== (int)$allocation->fuel_station_id) throw ValidationException::withMessages(['fuel_station_id'=>['Combustível exige um posto compatível com o local de estoque.']]);
+                            $physicalStation = DB::table('fuel_stations')->where('id',$allocation->fuel_station_id)->where('station_type','F')->where('status','A')->exists();
+                            if (!$physicalStation) throw ValidationException::withMessages(['fuel_station_id'=>['Selecione um posto físico ativo para armazenar o produto.']]);
+                        }
+                        if ($invoice->entry_type === 'FUEL') {
                             $this->fuelStocks->moveStock((int)$allocation->fuel_station_id,(int)$item->product_id,(float)$allocation->quantity,'E','I',null,'entry_invoice',$invoice->id,(float)$item->unit_value,$userId,'Entrada pela nota fiscal.');
                         } else {
                             $this->stocks->entry(['product_id'=>$item->product_id,'stock_location_id'=>$allocation->stock_location_id,'batch'=>$allocation->batch,'expiration_date'=>$allocation->expiration_date,'quantity'=>$allocation->quantity,'unit_value'=>$item->unit_value,'movement_type'=>'INVOICE_ENTRY','source_type'=>EntryInvoice::class,'source_id'=>$invoice->id,'created_by'=>$userId]);
@@ -93,6 +100,7 @@ class EntryInvoiceService
     private function header(array $data): array
     {
         $header = collect($data)->only(['entry_type','entry_method','supplier_id','producer_id','administrative_center_id','cost_center_id','crop_id','farm_id','access_key','document_model','invoice_number','series','issue_date','entry_date','operation_nature','products_value','freight_value','insurance_value','discount_value','other_expenses_value','invoice_total','freight_responsibility','observation'])->all();
+        $header['farm_id'] = null;
         $header['series'] = $header['series'] ?? '';
         return $header;
     }
@@ -102,8 +110,7 @@ class EntryInvoiceService
         foreach ($data['items'] as $index=>$payload) {
             $gross=round((float)$payload['quantity']*(float)$payload['unit_value'],2);
             $total=round($gross-(float)($payload['discount_value']??0)+(float)($payload['freight_value']??0)+(float)($payload['other_expenses_value']??0),2);
-            $profile=DB::table('product_stock_profiles')->where('product_id',$payload['product_id'])->first();
-            $item=$invoice->items()->create([...collect($payload)->only(['product_id','supplier_product_id','supplier_product_code','description','ncm','cfop','unit','quantity','unit_value','discount_value','freight_value','other_expenses_value'])->all(),'item_number'=>$index+1,'gross_value'=>$gross,'total_value'=>$total,'profile_snapshot'=>$profile?(array)$profile:null]);
+            $item=$invoice->items()->create([...collect($payload)->only(['product_id','supplier_product_id','supplier_product_code','description','ncm','cfop','unit','quantity','unit_value','discount_value','freight_value','other_expenses_value'])->all(),'item_number'=>$index+1,'gross_value'=>$gross,'total_value'=>$total]);
             foreach ($payload['allocations']??[] as $allocation) $item->allocations()->create([...$allocation,'batch'=>$allocation['batch']??'']);
             foreach ($payload['seed_lots']??[] as $lot) $item->seedLots()->create($lot);
         }

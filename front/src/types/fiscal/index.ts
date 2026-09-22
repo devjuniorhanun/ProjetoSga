@@ -12,12 +12,16 @@ export interface InvoiceItemDestination {
   id?: string;
   stock_location_id?: string | null;
   stock_location_name?: string;
-  field_id?: string | null;
-  field_name?: string;
+  plot_field_id?: string | null;
+  plot_field_name?: string;
+  fuel_station_id?: string | null;
   batch?: string | null;
+  lot_number?: string | null;
+  manufacturing_date?: string | null;
   expiration_date?: string | null;
   culture_id?: string | null;
-  variety_id?: string | null;
+  variety_culture_id?: string | null;
+  sieve?: string | null;
   quantity: number;
 }
 
@@ -36,8 +40,11 @@ export interface EntryInvoiceItem {
   unit_value: number;
   discount_value?: number;
   addition_value?: number;
+  other_expenses_value?: number;
   total_value?: number;
   destinations: InvoiceItemDestination[];
+  allocations?: InvoiceItemDestination[];
+  seed_lots?: InvoiceItemDestination[];
 }
 
 export interface EntryInvoiceInstallment {
@@ -69,6 +76,19 @@ export interface EntryInvoiceFreight {
   total_value?: number | null;
   paid_value?: number | null;
   balance_value?: number | null;
+}
+
+export interface EntryInvoiceFreightPayload {
+  product_id: string;
+  crop_id: string;
+  carrier_id: string;
+  freight_rate_id?: string | null;
+  driver_name?: string | null;
+  driver_cpf?: string | null;
+  driver_phone?: string | null;
+  vehicle_plate?: string | null;
+  invoice_weight: number;
+  value_per_ton: number;
 }
 
 export interface EntryInvoice {
@@ -107,12 +127,27 @@ export interface EntryInvoice {
   items?: EntryInvoiceItem[];
   installments?: EntryInvoiceInstallment[];
   freight?: EntryInvoiceFreight | null;
+  freights?: EntryInvoiceFreight[];
 }
+
+export type EntryInvoiceItemPayload = Omit<EntryInvoiceItem, 'destinations'>;
 
 export type EntryInvoicePayload = Omit<
   EntryInvoice,
-  'id' | 'status' | 'supplier_name' | 'producer_name' | 'administrative_center_name' | 'cost_center_name' | 'farm_name'
->;
+  | 'id'
+  | 'status'
+  | 'supplier_name'
+  | 'producer_name'
+  | 'administrative_center_name'
+  | 'cost_center_name'
+  | 'farm_name'
+  | 'items'
+  | 'freight'
+  | 'freights'
+> & {
+  items: EntryInvoiceItemPayload[];
+  freights?: EntryInvoiceFreightPayload[];
+};
 
 export interface XmlImportItem {
   id: string;

@@ -95,7 +95,6 @@ return new class extends Migration
             $table->decimal('other_expenses_value', 18, 2)->default(0);
             $table->decimal('total_value', 18, 2);
             $table->decimal('returned_quantity', 16, 3)->default(0);
-            $table->json('profile_snapshot')->nullable();
             $table->string('status', 30)->default('ACTIVE');
             $table->timestamps();
             $table->unique(['entry_invoice_id', 'item_number'], 'entry_invoice_item_number');
@@ -121,6 +120,7 @@ return new class extends Migration
             $table->foreignId('variety_culture_id')->constrained('variety_cultures')->restrictOnDelete();
             $table->foreignId('stock_location_id')->constrained()->restrictOnDelete();
             $table->string('lot_number', 100);
+            $table->string('sieve', 50);
             $table->decimal('quantity', 16, 3);
             $table->string('unit', 20);
             $table->decimal('package_quantity', 16, 3)->nullable();
@@ -130,7 +130,7 @@ return new class extends Migration
             $table->decimal('germination_percentage', 8, 3)->nullable();
             $table->decimal('purity_percentage', 8, 3)->nullable();
             $table->timestamps();
-            $table->unique(['entry_invoice_item_id', 'lot_number', 'stock_location_id'], 'entry_seed_lot_unique');
+            $table->unique(['entry_invoice_item_id', 'lot_number', 'variety_culture_id', 'stock_location_id'], 'entry_seed_lot_unique');
         });
 
         Schema::create('entry_invoice_installments', function (Blueprint $table): void {

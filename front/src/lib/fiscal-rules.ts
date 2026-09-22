@@ -74,8 +74,9 @@ export function installmentsAreValid(installments: EntryInvoiceInstallment[] = [
 export function seedDestinationIsValid(destination: InvoiceItemDestination): boolean {
   return (
     !!destination.culture_id &&
-    !!destination.variety_id &&
+    !!destination.variety_culture_id &&
     !!destination.batch &&
+    !!destination.sieve &&
     !!destination.stock_location_id &&
     (Number(destination.quantity) || 0) > 0
   );
@@ -83,15 +84,31 @@ export function seedDestinationIsValid(destination: InvoiceItemDestination): boo
 
 /** Insumo pode ir para talhões ou locais de estoque — sempre um dos dois. */
 export function inputDestinationIsValid(destination: InvoiceItemDestination): boolean {
-  return (!!destination.field_id || !!destination.stock_location_id) && (Number(destination.quantity) || 0) > 0;
+  return (!!destination.plot_field_id || !!destination.stock_location_id) && (Number(destination.quantity) || 0) > 0;
 }
 
 export function defaultDestinationIsValid(destination: InvoiceItemDestination): boolean {
   return !!destination.stock_location_id && (Number(destination.quantity) || 0) > 0;
 }
 
+export function defensiveDestinationIsValid(destination: InvoiceItemDestination): boolean {
+  return (
+    defaultDestinationIsValid(destination) &&
+    !!destination.batch &&
+    !!destination.manufacturing_date &&
+    !!destination.expiration_date &&
+    destination.expiration_date >= destination.manufacturing_date
+  );
+}
+
+export function fuelDestinationIsValid(destination: InvoiceItemDestination): boolean {
+  return defaultDestinationIsValid(destination) && !!destination.fuel_station_id;
+}
+
 export function destinationIsValid(entryType: FiscalEntryType, destination: InvoiceItemDestination): boolean {
   if (entryType === 'SEED') return seedDestinationIsValid(destination);
+  if (entryType === 'DEFENSIVE') return defensiveDestinationIsValid(destination);
+  if (entryType === 'FUEL' || entryType === 'LUBRICANT') return fuelDestinationIsValid(destination);
   if (entryType === 'INPUT') return inputDestinationIsValid(destination);
   return defaultDestinationIsValid(destination);
 }
@@ -99,11 +116,9 @@ export function destinationIsValid(entryType: FiscalEntryType, destination: Invo
 /** Combustível só entra em local de estoque de posto compatível com o produto. */
 export function isCompatibleFuelLocation(
   location: { id: string; location_type?: string | null } | undefined | null,
-  profile: { invoice_type?: string; default_stock_location_id?: string | null } | undefined | null,
 ): boolean {
   if (!location) return false;
-  if (profile && profile.invoice_type && profile.invoice_type !== 'FUEL') return false;
-  return String(location.location_type ?? '').toUpperCase().includes('POST');
+  return String(location.location_type ?? '').toUpperCase() === 'FUEL_STATION';
 }
 
 export interface ItemValidationResult {

@@ -6,8 +6,6 @@ export const INVENTORY_BASE = '/registrations/inventory';
 
 export type ActiveStatus = 'A' | 'I';
 
-export type StockInvoiceType = 'FUEL' | 'LUBRICANT' | 'DEFENSIVE' | 'INPUT' | 'GENERAL' | 'SEED';
-
 export type AgriculturalServiceCategory =
   | 'SOIL_PREPARATION'
   | 'INPUT_APPLICATION'
@@ -20,24 +18,11 @@ export interface StockLocation {
   location_type: string;
   farm_id?: string | null;
   farm_name?: string;
+  fuel_station_id?: string | null;
+  fuel_station_type?: 'F' | 'M' | null;
   grain_warehouse_id?: string | null;
   grain_warehouse_name?: string;
   maximum_capacity?: number | null;
-  status: ActiveStatus;
-  notes?: string | null;
-}
-
-export interface ProductStockProfile {
-  id: string;
-  product_id: string;
-  product_name?: string;
-  invoice_type: StockInvoiceType;
-  default_stock_location_id?: string | null;
-  default_stock_location_name?: string;
-  controls_batch: boolean;
-  controls_expiration: boolean;
-  controls_freight: boolean;
-  controls_stock: boolean;
   status: ActiveStatus;
   notes?: string | null;
 }
@@ -116,9 +101,6 @@ export function createInventoryCrudService<T extends { id: string }>(endpoint: s
 export const stockLocationsService = createInventoryCrudService<StockLocation>(
   `${INVENTORY_BASE}/stock-locations`,
 );
-export const productStockProfilesService = createInventoryCrudService<ProductStockProfile>(
-  `${INVENTORY_BASE}/product-stock-profiles`,
-);
 export const seedProductProfilesService = createInventoryCrudService<SeedProductProfile>(
   `${INVENTORY_BASE}/seed-product-profiles`,
 );
@@ -128,15 +110,6 @@ export const agriculturalServiceTypesService = createInventoryCrudService<Agricu
 export const freightRatesService = createInventoryCrudService<FreightRate>(
   `${INVENTORY_BASE}/freight-rates`,
 );
-
-export const INVOICE_TYPE_LABELS: Record<StockInvoiceType, string> = {
-  FUEL: 'Combustível',
-  LUBRICANT: 'Lubrificante',
-  DEFENSIVE: 'Defensivo',
-  INPUT: 'Insumo',
-  GENERAL: 'Geral',
-  SEED: 'Semente',
-};
 
 export const SERVICE_CATEGORY_LABELS: Record<AgriculturalServiceCategory, string> = {
   SOIL_PREPARATION: 'Preparo de solo',
