@@ -122,7 +122,7 @@ export function DefensiveServiceOrderDocument({ order, config, model, generatedA
       </table>
 
       <footer className="defensive-order-institutional-footer">
-        <span>{DEFENSIVE_ORDER_TEXT.credit} - {document.generatedAt}</span>
+        <span>{DEFENSIVE_ORDER_TEXT.credit} {document.generatedAt}</span>
         <span>{DEFENSIVE_ORDER_TEXT.page}</span>
       </footer>
     </article>

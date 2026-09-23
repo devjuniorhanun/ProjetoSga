@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { reportFooterText } from './report-footer';
 
 export interface ExportConfig {
   producer_name?: string;
@@ -113,8 +114,7 @@ export function exportToPdf(
   // Rodapé: crédito à esquerda, paginação à direita
   const pageHeight = doc.internal.pageSize.getHeight();
   const totalPages = doc.getNumberOfPages();
-  const generatedAt = new Date().toLocaleString('pt-BR');
-  const credit = `Desenvolvidor por Sisdeve - www.sisdeve.com.br - ${generatedAt}`;
+  const credit = reportFooterText();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFont('helvetica', 'normal');
@@ -270,11 +270,10 @@ export function exportTankerOutputPdf(data: TankerOutputPdfData, config?: Export
   y += signRowHeight;
 
   // Rodapé: crédito à esquerda, paginação à direita
-  const generatedAt = new Date().toLocaleString('pt-BR');
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(110, 110, 110);
-  doc.text(`Desenvolvidor por Sisdeve - www.sisdeve.com.br - ${generatedAt}`, 8, pageHeight - 6, { align: 'left' });
+  doc.text(reportFooterText(), 8, pageHeight - 6, { align: 'left' });
   doc.text('Página 1 de 1', pageWidth - 8, pageHeight - 6, { align: 'right' });
 
   doc.save(`${sanitize(`controle-saida-produtos-${data.id ?? ''}`)}.pdf`);

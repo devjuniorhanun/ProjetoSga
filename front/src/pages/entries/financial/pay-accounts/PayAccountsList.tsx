@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/DataTable';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -51,7 +50,6 @@ export default function PayAccountsList() {
     date_from: searchParams.get('date_from') ?? '',
     date_to: searchParams.get('date_to') ?? '',
     document_number: searchParams.get('document_number') ?? '',
-    entry_type: searchParams.get('entry_type') ?? '',
     status: searchParams.get('status') ?? '',
     accounted_for: searchParams.get('accounted_for') ?? '',
     producer_id: searchParams.get('producer_id') ?? '',
@@ -192,15 +190,6 @@ export default function PayAccountsList() {
     { key: 'value', label: 'Valor', render: (item: PayAccount) => formatCurrencyBRL(item.value) },
     { key: 'accounted_for', label: 'Contabilizado', render: (item: PayAccount) => (item.accounted_for === 'S' ? 'Sim' : 'Não') },
     { key: 'status', label: 'Unidade', render: (item: PayAccount) => PAY_ACCOUNT_STATUS_LABELS[item.status] ?? item.status },
-    {
-      key: 'entry_type',
-      label: 'Tipo de Lançamento',
-      render: (item: PayAccount) => (
-        <Badge variant={item.entry_type === 'PAYROLL' ? 'secondary' : 'outline'}>
-          {ENTRY_TYPE_LABELS[item.entry_type] ?? item.entry_type ?? 'Conta paga'}
-        </Badge>
-      ),
-    },
   ];
 
   return (
@@ -229,18 +218,6 @@ export default function PayAccountsList() {
         <div className="space-y-1">
           <Label className="text-xs">Documento</Label>
           <Input value={filters.document_number} onChange={(e) => setFilter('document_number', e.target.value)} placeholder="Nº documento" />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Tipo de Lançamento</Label>
-          <Select value={filters.entry_type || ALL} onValueChange={(v) => setFilter('entry_type', v === ALL ? '' : v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos</SelectItem>
-              {Object.entries(ENTRY_TYPE_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Safra</Label>

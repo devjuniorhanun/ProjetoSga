@@ -69,7 +69,7 @@ const emptyHeader = (): HeaderState => ({
   cost_center_id: '',
   crop_id: '',
   access_key: '',
-  document_model: '',
+  document_model: '55',
   invoice_number: '',
   series: '',
   issue_date: '',

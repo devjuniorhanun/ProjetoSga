@@ -18,6 +18,7 @@ class EntryInvoiceService
     public function save(array $data, int $userId, ?EntryInvoice $invoice = null): EntryInvoice
     {
         $this->assertCatalogCompatibility($data);
+        $this->assertInvoiceIdentityAvailable($data, $invoice);
         $freightCropIds = collect($data['freights'] ?? [])->pluck('crop_id')->filter()->map(fn ($id): int => (int) $id)->unique()->values();
         if (isset($data['crop_id']) && $freightCropIds->contains(fn (int $id): bool => $id !== (int) $data['crop_id'])) {
             throw ValidationException::withMessages(['freights' => ['Todos os fretes devem pertencer à safra informada na nota.']]);
@@ -41,6 +42,22 @@ class EntryInvoiceService
         });
     }
 
+    private function assertInvoiceIdentityAvailable(array $data, ?EntryInvoice $invoice): void
+    {
+        $duplicate = EntryInvoice::withTrashed()
+            ->where('supplier_id', $data['supplier_id'])
+            ->where('invoice_number', $data['invoice_number'])
+            ->where('series', $data['series'] ?? '')
+            ->when($invoice, fn ($query) => $query->where('id', '!=', $invoice->id))
+            ->exists();
+
+        if ($duplicate) {
+            throw ValidationException::withMessages([
+                'invoice_number' => ['Já existe uma nota deste fornecedor com o mesmo número e série.'],
+            ]);
+        }
+    }
+
     private function assertCatalogCompatibility(array $data): void
     {
         $supplierTypes = [
@@ -48,14 +65,14 @@ class EntryInvoiceService
             'FUEL' => ['label' => 'COMBUSTÍVEIS', 'names' => ['COMBUSTÍVEIS', 'COMBUSTIVEIS']],
             'LUBRICANT' => ['label' => 'LUBRIFICANTES', 'names' => ['LUBRIFICANTES']],
             'SEED' => ['label' => 'SEMENTES', 'names' => ['SEMENTES']],
-            'INPUT' => ['label' => 'INSUMO', 'names' => ['INSUMO']],
+            'INPUT' => ['label' => 'INSUMOS', 'names' => ['INSUMOS']],
         ];
         $productGroups = [
             'DEFENSIVE' => ['label' => 'QUÍMICOS', 'names' => ['QUÍMICOS', 'QUIMICOS']],
             'FUEL' => ['label' => 'COMBUSTÍVEIS', 'names' => ['COMBUSTÍVEIS', 'COMBUSTIVEIS']],
             'LUBRICANT' => ['label' => 'LUBRIFICANTES', 'names' => ['LUBRIFICANTES']],
             'SEED' => ['label' => 'SEMENTES', 'names' => ['SEMENTES']],
-            'INPUT' => ['label' => 'INSUMO', 'names' => ['INSUMO']],
+            'INPUT' => ['label' => 'INSUMOS', 'names' => ['INSUMOS']],
         ];
         $entryType = $data['entry_type'];
 
@@ -154,6 +171,7 @@ class EntryInvoiceService
     {
         $header = collect($data)->only(['entry_type','entry_method','supplier_id','producer_id','administrative_center_id','cost_center_id','crop_id','farm_id','access_key','document_model','invoice_number','series','issue_date','entry_date','operation_nature','products_value','freight_value','insurance_value','discount_value','other_expenses_value','invoice_total','freight_responsibility','observation'])->all();
         $header['farm_id'] = null;
+        $header['document_model'] = filled($header['document_model'] ?? null) ? trim((string) $header['document_model']) : '55';
         $header['series'] = $header['series'] ?? '';
         return $header;
     }

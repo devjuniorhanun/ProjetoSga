@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Printer } from 'lucide-react';
 import { defensiveReportsService } from '@/lib/api-services-reports-defensive';
 import { formatDate } from '@/lib/utils';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 
 const statusLabels: Record<string, string> = { A: 'Aberta', F: 'Finalizada', I: 'Inativa' };
 const number = (value: number | null | undefined) => value == null ? '-' : Number(value).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
@@ -62,6 +63,7 @@ export default function DefensiveOrdersConferencePage() {
 
         <Card><CardHeader><CardTitle>Produtos utilizados nas ordens</CardTitle></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Produto</TableHead><TableHead>Quantidade recomendada</TableHead><TableHead>Dose recomendada</TableHead><TableHead>Quantidade usada</TableHead><TableHead>Quantidade usada / área</TableHead></TableRow></TableHeader><TableBody>{report.products.map((product) => <TableRow key={String(product.product_id)}><TableCell>{product.product_name}</TableCell><TableCell>{number(product.recommended_quantity)}</TableCell><TableCell>{number(product.recommended_dose)}</TableCell><TableCell>{number(product.used_quantity)}</TableCell><TableCell>{number(product.used_per_area)}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>
         <div className="pt-16 text-center"><div className="mx-auto w-80 border-t border-black pt-2">Assinatura do responsável</div></div>
+        <ReportPrintFooter />
       </div>}
     </div>
   );

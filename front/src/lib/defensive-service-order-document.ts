@@ -35,7 +35,7 @@ export const DEFENSIVE_ORDER_TEXT = {
   totalApplied: 'TOTAL DE BOMBAS APLICADAS.:',
   totalReal: 'TOTAL GERAL DE BOMBAS REAIS APLICADAS.:',
   closingDate: 'DATA FECHAMENTO O.S.:',
-  credit: 'Desenvolvido por Sisdeve - www.sisdeve.com.br',
+  credit: 'Sisdeve • www.sisdeve.com.br • Gerado em',
   page: 'Página 1 de 1',
 } as const;
 
@@ -199,7 +199,7 @@ export function buildDefensiveServiceOrderDocument(
     controls,
     usedBomb: formatDocumentNumber(order.used_bomb, ''),
     closingDate: order.closing_date ? formatDocumentDate(order.closing_date, '') : MANUAL_DATE,
-    generatedAt: generatedAt.toLocaleString('pt-BR'),
+    generatedAt: `${generatedAt.toLocaleDateString('pt-BR')} às ${generatedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
     compact: products.length > DEFENSIVE_ORDER_LAYOUT.minimumProductRows,
   };
 }

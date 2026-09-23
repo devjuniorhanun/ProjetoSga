@@ -64,7 +64,12 @@ class SimplePdfReport
             }
         }
 
-        $commands[] = '0.38 0.45 0.41 rg BT /F1 7 Tf 36 20 Td '.$this->text('SISDEVE Agro - Página '.$page.' de '.$pages).' ET';
+        $commands[] = '0.38 0.45 0.41 rg BT /F1 7 Tf 36 20 Td '.$this->text(
+            'Sisdeve • www.sisdeve.com.br • Gerado em '.now()->format('d/m/Y').' às '.now()->format('H:i')
+        ).' ET';
+        $commands[] = '0.38 0.45 0.41 rg BT /F1 7 Tf 745 20 Td '.$this->text(
+            'Página '.$page.' de '.$pages
+        ).' ET';
 
         return implode("\n", $commands);
     }

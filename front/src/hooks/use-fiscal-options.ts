@@ -18,7 +18,7 @@ const supplierTypeByEntry: Partial<Record<FiscalEntryType, string>> = {
   FUEL: 'COMBUSTIVEIS',
   LUBRICANT: 'LUBRIFICANTES',
   SEED: 'SEMENTES',
-  INPUT: 'INSUMO',
+  INPUT: 'INSUMOS',
 };
 
 const productGroupByEntry: Partial<Record<FiscalEntryType, string>> = {
@@ -26,7 +26,7 @@ const productGroupByEntry: Partial<Record<FiscalEntryType, string>> = {
   FUEL: 'COMBUSTIVEIS',
   LUBRICANT: 'LUBRIFICANTES',
   SEED: 'SEMENTES',
-  INPUT: 'INSUMO',
+  INPUT: 'INSUMOS',
 };
 
 /** Listas de apoio compartilhadas pelas telas fiscais, de estoque e de frete. */

@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Printer } from 'lucide-react';
 import { defensiveReportsService } from '@/lib/api-services-reports-defensive';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 
 const number = (value: number | null | undefined) => value == null ? '-' : Number(value).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
 
@@ -33,6 +34,7 @@ export default function DefensiveCropProductsConferencePage() {
       <div className="text-center"><h2 className="text-xl font-bold">Conferência Total de Produtos por Safra</h2><p>{report.crop.name}</p><p>{report.order_count} ordem(ns) • {report.operation_count} operação(ões) • {report.field_count} talhão(ões) • Área considerada: {number(report.considered_area)} ha</p></div>
       <Card><CardHeader><CardTitle>Total de produtos utilizados</CardTitle></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Produto</TableHead><TableHead>Quantidade recomendada</TableHead><TableHead>Dose recomendada</TableHead><TableHead>Quantidade usada</TableHead><TableHead>Quantidade usada / área</TableHead></TableRow></TableHeader><TableBody>{report.products.map((product) => <TableRow key={String(product.product_id)}><TableCell>{product.product_name}</TableCell><TableCell>{number(product.recommended_quantity)}</TableCell><TableCell>{number(product.recommended_dose)}</TableCell><TableCell>{number(product.used_quantity)}</TableCell><TableCell>{number(product.used_per_area)}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>
       <div className="pt-16 text-center"><div className="mx-auto w-80 border-t border-black pt-2">Assinatura do responsável</div></div>
+      <ReportPrintFooter />
     </div>}
   </div>;
 }

@@ -4,6 +4,8 @@ export interface PayAccountReceiptParty {
   name?: string;
   cpf_cnpj?: string;
   document?: string;
+  address?: string;
+  farm?: string;
   farm_name?: string;
 }
 
@@ -24,7 +26,11 @@ export interface PayAccountReceipt {
   value: number | string;
   is_monetary: boolean;
   unit?: string | null;
-  payment_method?: string;
+  payment_method?: string | {
+    id?: string | number;
+    name?: string;
+    abbreviation?: string;
+  };
   payer?: PayAccountReceiptParty | null;
   payee?: PayAccountReceiptParty | null;
   bank_account?: PayAccountReceiptBankAccount | null;

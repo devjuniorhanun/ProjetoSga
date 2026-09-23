@@ -149,7 +149,7 @@ function renderPdf(model: DefensiveServiceOrderDocumentModel): jsPDF {
   doc.setTextColor(90, 90, 90);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
-  doc.text(`${DEFENSIVE_ORDER_TEXT.credit} - ${model.generatedAt}`, margin, pageHeight - 5);
+  doc.text(`${DEFENSIVE_ORDER_TEXT.credit} ${model.generatedAt}`, margin, pageHeight - 5);
   doc.text(DEFENSIVE_ORDER_TEXT.page, pageWidth - margin, pageHeight - 5, { align: 'right' });
   return doc;
 }
