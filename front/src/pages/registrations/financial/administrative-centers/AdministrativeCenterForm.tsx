@@ -39,7 +39,7 @@ export function AdministrativeCenterForm({ item, onSave, onCancel }: Props) {
 
   const { data: producers = [], isLoading: loadingProducers } = useQuery({
     queryKey: ['producers'],
-    queryFn: producersService.getAll,
+    queryFn: () => producersService.getAll({ status: 'A' }),
   });
 
   const activeProducers = useMemo(() => producers.filter(p => p.status === 'A'), [producers]);

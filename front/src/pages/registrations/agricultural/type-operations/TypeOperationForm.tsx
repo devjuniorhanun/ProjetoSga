@@ -25,7 +25,7 @@ export function TypeOperationForm({ item, onSave, onCancel }: Props) {
   const [loading, setLoading] = useState(false);
   const { data: operations = [] } = useQuery({
     queryKey: ['operation-defensives'],
-    queryFn: operationDefensivesService.getAll,
+    queryFn: () => operationDefensivesService.getAll({ status: 'A' }),
   });
 
   const operationOptions = useMemo(

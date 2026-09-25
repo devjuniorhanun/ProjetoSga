@@ -217,9 +217,10 @@ export const payAccountsService = {
 
 function createCrudService<T extends { id: string }>(endpoint: string) {
   return {
-    getAll: async (): Promise<T[]> => {
-      const { data } = await api.get(endpoint);
-      return unwrapList<T>(data);
+    getAll: async (params?: Record<string, unknown>): Promise<T[]> => {
+      const { data } = await api.get(endpoint, { params });
+      const rows = unwrapList<T>(data);
+      return params?.status ? rows.filter((item) => (item as T & { status?: string }).status === params.status) : rows;
     },
     getById: async (id: string): Promise<T> => {
       const { data } = await api.get(`${endpoint}/${id}`);

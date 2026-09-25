@@ -21,7 +21,7 @@ export default function CropsList() {
 
   const { data: cultures = [] } = useQuery({
     queryKey: ['cultures'],
-    queryFn: culturesService.getAll,
+    queryFn: () => culturesService.getAll({ status: 'A' }),
   });
 
   const getCultureNames = (cultureIds?: string[]) => {

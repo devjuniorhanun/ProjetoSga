@@ -49,12 +49,12 @@ export function PaidAccountReportFilters({
   pdfDisabled,
   children,
 }: Props) {
-  const { data: producers = [] } = useQuery({ queryKey: ['producers'], queryFn: producersService.getAll });
-  const { data: costCenters = [] } = useQuery({ queryKey: ['cost-centers'], queryFn: costCentersService.getAll });
-  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers'], queryFn: suppliersService.getAll });
+  const { data: producers = [] } = useQuery({ queryKey: ['producers', 'active-options'], queryFn: () => producersService.getAll({ status: 'A' }) });
+  const { data: costCenters = [] } = useQuery({ queryKey: ['cost-centers', 'active-options'], queryFn: () => costCentersService.getAll({ status: 'A' }) });
+  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers', 'active-options'], queryFn: () => suppliersService.getAll({ status: 'A' }) });
   const { data: typeAccounts = [] } = useQuery({
     queryKey: ['type-pay-accounts'],
-    queryFn: typePayAccountsService.getAll,
+    queryFn: () => typePayAccountsService.getAll({ status: 'A' }),
   });
 
   const producerId = values.producer_id ?? '';

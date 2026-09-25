@@ -42,7 +42,7 @@ export function ContractForm({ item, service, queryKey, label, showShippingCost 
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [costDisplay, setCostDisplay] = useState(item?.shipping_cost ? formatCurrencyBRL(item.shipping_cost) : '');
-  const { data: crops = [], isLoading: loadingCrops } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
+  const { data: crops = [], isLoading: loadingCrops } = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
 
   const activeCrops = crops.filter((c) => c.status === 'A' || c.id === item?.crop_id);
 

@@ -25,10 +25,10 @@ export default function GrainTransfersList() {
   const [warehouseFilter, setWarehouseFilter] = useState('');
   const [cultureFilter, setCultureFilter] = useState('');
 
-  const { data: crops = [] } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
-  const { data: producers = [] } = useQuery({ queryKey: ['producers'], queryFn: producersService.getAll });
-  const { data: warehouses = [] } = useQuery({ queryKey: ['warehouses'], queryFn: warehousesService.getAll });
-  const { data: cultures = [] } = useQuery({ queryKey: ['cultures'], queryFn: culturesService.getAll });
+  const { data: crops = [] } = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
+  const { data: producers = [] } = useQuery({ queryKey: ['producers', 'active-options'], queryFn: () => producersService.getAll({ status: 'A' }) });
+  const { data: warehouses = [] } = useQuery({ queryKey: ['warehouses', 'active-options'], queryFn: () => warehousesService.getAll({ status: 'A' }) });
+  const { data: cultures = [] } = useQuery({ queryKey: ['cultures', 'active-options'], queryFn: () => culturesService.getAll({ status: 'A' }) });
 
   const filters = {
     crop_id: cropFilter || undefined,

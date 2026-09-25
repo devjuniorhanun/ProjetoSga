@@ -143,31 +143,31 @@ const nameOf = (item: Record<string, unknown>): string =>
 
 export const grainSupportService = {
   producers: async (): Promise<SupportOption[]> => {
-    const { data } = await api.get('/registrations/properties/producers');
+    const { data } = await api.get('/registrations/properties/producers', { params: { status: 'A' } });
     return unwrapList<Record<string, unknown>>(data).map((p) => ({ id: String(p.id), name: nameOf(p) }));
   },
   farms: async (producerId?: string): Promise<Array<SupportOption & { producer_id?: string }>> => {
     const { data } = await api.get('/registrations/property/areas/farms', {
-      params: producerId ? { producer_id: producerId } : undefined,
+      params: { status: 'A', ...(producerId ? { producer_id: producerId } : {}) },
     });
     return unwrapList<Record<string, unknown>>(data)
       .map((f) => ({ id: String(f.id), name: nameOf(f), producer_id: f.producer_id ? String(f.producer_id) : undefined }))
       .filter((f) => !producerId || !f.producer_id || f.producer_id === producerId);
   },
   crops: async (): Promise<SupportOption[]> => {
-    const { data } = await api.get('/registrations/harvest/crops');
+    const { data } = await api.get('/registrations/harvest/crops', { params: { status: 'A' } });
     return unwrapList<Record<string, unknown>>(data).map((c) => ({ id: String(c.id), name: nameOf(c) }));
   },
   cultures: async (): Promise<SupportOption[]> => {
-    const { data } = await api.get('/registrations/harvest/cultures');
+    const { data } = await api.get('/registrations/harvest/cultures', { params: { status: 'A' } });
     return unwrapList<Record<string, unknown>>(data).map((c) => ({ id: String(c.id), name: nameOf(c) }));
   },
   culturesByCrop: async (cropId: string): Promise<SupportOption[]> => {
-    const { data } = await api.get(`/registrations/harvest/crops/${cropId}/cultures`);
+    const { data } = await api.get(`/registrations/harvest/crops/${cropId}/cultures`, { params: { status: 'A' } });
     return unwrapList<Record<string, unknown>>(data).map((c) => ({ id: String(c.id), name: nameOf(c) }));
   },
   suppliers: async (): Promise<SupportOption[]> => {
-    const { data } = await api.get('/registrations/supplier/suppliers');
+    const { data } = await api.get('/registrations/supplier/suppliers', { params: { status: 'A' } });
     return unwrapList<Record<string, unknown>>(data).map((s) => ({ id: String(s.id), name: nameOf(s) }));
   },
   buyers: async (): Promise<GrainBuyer[]> => {

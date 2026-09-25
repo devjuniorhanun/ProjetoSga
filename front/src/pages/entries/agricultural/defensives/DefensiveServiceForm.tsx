@@ -86,15 +86,15 @@ export function DefensiveServiceForm({ item, onSave, onCancel }: Props) {
   const [showProductModal, setShowProductModal] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  const { data: crops = [], isLoading: l1 } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
+  const { data: crops = [], isLoading: l1 } = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
   const [cropCultures, setCropCultures] = useState<{ id: string; name: string }[]>([]);
   const [loadingCropCultures, setLoadingCropCultures] = useState(false);
-  const { data: typeOperations = [], isLoading: l3 } = useQuery({ queryKey: ['type-operations'], queryFn: typeOperationsService.getAll });
-  const { data: fieldsList = [], isLoading: l4 } = useQuery({ queryKey: ['fields'], queryFn: fieldsService.getAll });
-  const { data: agriOperators = [], isLoading: l5 } = useQuery({ queryKey: ['agricultural-operators'], queryFn: agriculturalOperatorsService.getAll });
+  const { data: typeOperations = [], isLoading: l3 } = useQuery({ queryKey: ['type-operations', 'active-options'], queryFn: () => typeOperationsService.getAll({ status: 'A' }) });
+  const { data: fieldsList = [], isLoading: l4 } = useQuery({ queryKey: ['fields', 'active-options'], queryFn: () => fieldsService.getAll({ status: 'A' }) });
+  const { data: agriOperators = [], isLoading: l5 } = useQuery({ queryKey: ['agricultural-operators', 'active-options'], queryFn: () => agriculturalOperatorsService.getAll({ status: 'A' }) });
 
 
-  const { data: productsList = [], isLoading: l7 } = useQuery({ queryKey: ['products'], queryFn: productsService.getAll });
+  const { data: productsList = [], isLoading: l7 } = useQuery({ queryKey: ['products', 'active-options'], queryFn: () => productsService.getAll({ status: 'A' }) });
 
   const fieldOptions = useMemo(() => fieldsList.filter((f: any) => f.status === undefined || f.status === 'A').map((f) => ({ value: f.id, label: f.name })), [fieldsList]);
   const operatorOptions = useMemo(() => agriOperators.filter((o: any) => o.status === undefined || o.status === 'A').map((o) => ({ value: o.id, label: o.supplier_name || o.id })), [agriOperators]);

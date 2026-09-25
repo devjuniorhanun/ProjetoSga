@@ -27,8 +27,8 @@ interface Props { item?: SupplierProduct | null; onSave: () => void; onCancel: (
 export function SupplierProductForm({ item, onSave, onCancel }: Props) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const { data: suppliers = [], isLoading: ls } = useQuery({ queryKey: ['suppliers'], queryFn: suppliersService.getAll });
-  const { data: products = [], isLoading: lp } = useQuery({ queryKey: ['products'], queryFn: productsService.getAll });
+  const { data: suppliers = [], isLoading: ls } = useQuery({ queryKey: ['suppliers', 'active-options'], queryFn: () => suppliersService.getAll({ status: 'A' }) });
+  const { data: products = [], isLoading: lp } = useQuery({ queryKey: ['products', 'active-options'], queryFn: () => productsService.getAll({ status: 'A' }) });
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, setError } = useForm<FormData>({
     resolver: zodResolver(schema),

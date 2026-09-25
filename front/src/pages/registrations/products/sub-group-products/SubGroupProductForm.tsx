@@ -19,7 +19,7 @@ interface Props { item?: SubGroupProduct | null; onSave: () => void; onCancel: (
 export function SubGroupProductForm({ item, onSave, onCancel }: Props) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const { data: groups = [], isLoading: lg } = useQuery({ queryKey: ['product-groups'], queryFn: productGroupsService.getAll });
+  const { data: groups = [], isLoading: lg } = useQuery({ queryKey: ['product-groups', 'active-options'], queryFn: () => productGroupsService.getAll({ status: 'A' }) });
   const { register, handleSubmit, setValue, watch, formState: { errors }, setError } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: item ? { product_group_id: item.product_group_id, name: item.name, status: item.status } : { status: 'A' } });
   const onSubmit = async (data: FormData) => {
     setLoading(true);

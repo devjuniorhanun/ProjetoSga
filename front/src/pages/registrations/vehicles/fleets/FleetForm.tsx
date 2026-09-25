@@ -47,9 +47,9 @@ function formatMeterInit(v?: string | number) {
 export function FleetForm({ item, onSave, onCancel }: Props) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const { data: groups = [], isLoading: lg } = useQuery({ queryKey: ['fleet-groups'], queryFn: fleetGroupsService.getAll });
-  const { data: brands = [], isLoading: lb } = useQuery({ queryKey: ['fleet-brands'], queryFn: fleetBrandsService.getAll });
-  const { data: allModels = [], isLoading: lm } = useQuery({ queryKey: ['fleet-models'], queryFn: fleetModelsService.getAll });
+  const { data: groups = [], isLoading: lg } = useQuery({ queryKey: ['fleet-groups', 'active-options'], queryFn: () => fleetGroupsService.getAll({ status: 'A' }) });
+  const { data: brands = [], isLoading: lb } = useQuery({ queryKey: ['fleet-brands', 'active-options'], queryFn: () => fleetBrandsService.getAll({ status: 'A' }) });
+  const { data: allModels = [], isLoading: lm } = useQuery({ queryKey: ['fleet-models', 'active-options'], queryFn: () => fleetModelsService.getAll({ status: 'A' }) });
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, setError } = useForm<FormData>({
     resolver: zodResolver(schema),

@@ -40,7 +40,7 @@ export function SupplierForm({ item, onSave, onCancel }: Props) {
 
   const { data: typeSuppliers = [], isLoading: loadingTypes } = useQuery({
     queryKey: ['type-suppliers'],
-    queryFn: typeSuppliersService.getAll,
+    queryFn: () => typeSuppliersService.getAll({ status: 'A' }),
   });
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, setError } = useForm<FormData>({

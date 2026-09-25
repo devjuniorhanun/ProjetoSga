@@ -11,21 +11,21 @@ import { inventoryBalancesService } from '@/lib/api-services-inventory-releases'
 import type { AgriculturalServiceCategory } from '@/types/agricultural';
 import type { ComboboxOption } from '@/components/ui/combobox';
 
-const active = <T extends { status?: string }>(rows: T[]) => rows.filter((r) => !r.status || r.status === 'A');
+const active = <T extends { status?: string }>(rows: T[]) => rows.filter((r) => r.status === 'A');
 
 /** Listas de apoio compartilhadas pelas telas de serviços agrícolas e tratamento de sementes. */
 export function useAgriculturalOptions(category?: AgriculturalServiceCategory) {
-  const crops = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
-  const cultures = useQuery({ queryKey: ['cultures'], queryFn: culturesService.getAll });
-  const varieties = useQuery({ queryKey: ['varieties'], queryFn: varietiesService.getAll });
-  const farms = useQuery({ queryKey: ['farms'], queryFn: farmsService.getAll });
-  const plotFields = useQuery({ queryKey: ['plot-fields'], queryFn: plotFieldsService.getAll });
-  const products = useQuery({ queryKey: ['products'], queryFn: productsService.getAll });
-  const fleets = useQuery({ queryKey: ['fleets'], queryFn: fleetsService.getAll });
-  const fleetGroups = useQuery({ queryKey: ['fleet-groups'], queryFn: fleetGroupsService.getAll });
+  const crops = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
+  const cultures = useQuery({ queryKey: ['cultures', 'active-options'], queryFn: () => culturesService.getAll({ status: 'A' }) });
+  const varieties = useQuery({ queryKey: ['varieties', 'active-options'], queryFn: () => varietiesService.getAll({ status: 'A' }) });
+  const farms = useQuery({ queryKey: ['farms', 'active-options'], queryFn: () => farmsService.getAll({ status: 'A' }) });
+  const plotFields = useQuery({ queryKey: ['plot-fields', 'active-options'], queryFn: () => plotFieldsService.getAll({ status: 'A' }) });
+  const products = useQuery({ queryKey: ['products', 'active-options'], queryFn: () => productsService.getAll({ status: 'A' }) });
+  const fleets = useQuery({ queryKey: ['fleets', 'active-options'], queryFn: () => fleetsService.getAll({ status: 'A' }) });
+  const fleetGroups = useQuery({ queryKey: ['fleet-groups', 'active-options'], queryFn: () => fleetGroupsService.getAll({ status: 'A' }) });
   const operators = useQuery({
-    queryKey: ['agricultural-operators'],
-    queryFn: agriculturalOperatorsService.getAll,
+    queryKey: ['agricultural-operators', 'active-options'],
+    queryFn: () => agriculturalOperatorsService.getAll({ status: 'A' }),
   });
   const serviceTypes = useQuery({
     queryKey: ['agricultural-service-types', 'options'],

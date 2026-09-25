@@ -13,7 +13,7 @@ import { interpolateLiters } from '@/lib/fuel-rules';
 export default function FuelGaugeReadingsList() {
   const { data, isLoading } = useCrud<FuelTankGaugeReading>('fuel-gauge-readings', fuelGaugeReadingsService);
   const { stationOptions, tanksByStation } = useFuelOptions();
-  const { data: gaugeRows = [] } = useQuery({ queryKey: ['fuel-gauge-tables'], queryFn: fuelGaugeTablesService.getAll });
+  const { data: gaugeRows = [] } = useQuery({ queryKey: ['fuel-gauge-tables', 'active-options'], queryFn: () => fuelGaugeTablesService.getAll({ status: 'A' }) });
 
   /** Converte centímetros em litros pela régua do tanque, interpolando entre os pontos cadastrados. */
   const litersFor = (tankId: string, centimeters: string): string => {

@@ -37,12 +37,12 @@ export function FarmForm({ item, onSave, onCancel }: Props) {
 
   const { data: owners = [], isLoading: loadingOwners } = useQuery({
     queryKey: ['owners'],
-    queryFn: ownersService.getAll,
+    queryFn: () => ownersService.getAll({ status: 'A' }),
   });
 
   const { data: producers = [], isLoading: loadingProducers } = useQuery({
     queryKey: ['producers'],
-    queryFn: producersService.getAll,
+    queryFn: () => producersService.getAll({ status: 'A' }),
   });
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, setError } = useForm<FormData>({

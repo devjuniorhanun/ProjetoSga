@@ -56,7 +56,7 @@ export function MatrixFreightForm({ item, onSave, onCancel }: Props) {
 
   const { data: crops = [], isLoading: loadingCrops } = useQuery({
     queryKey: ['crops'],
-    queryFn: cropsService.getAll,
+    queryFn: () => cropsService.getAll({ status: 'A' }),
   });
 
   const filteredCrops = useMemo(() => {

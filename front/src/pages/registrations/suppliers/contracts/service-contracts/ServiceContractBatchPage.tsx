@@ -95,7 +95,7 @@ export function ServiceContractBatchPage({
   const [preview, setPreview] = useState<ServiceContractPreview | null>(null);
   const [generated, setGenerated] = useState<ServiceContract[]>([]);
 
-  const { data: crops = [] } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
+  const { data: crops = [] } = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
   const { data: suppliers = [], isLoading: loadingSuppliers } = useQuery({
     queryKey: ['service-contract-suppliers', contractType],
     queryFn: () => serviceContractsService.getSuppliers(contractType),

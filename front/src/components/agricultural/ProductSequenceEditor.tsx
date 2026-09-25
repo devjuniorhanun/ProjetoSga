@@ -34,11 +34,11 @@ export function ProductSequenceEditor({ orderId, orderStatus, products }: Props)
 
   const { data: agriculturalProducts } = useQuery({
     queryKey: ['agricultural-products'],
-    queryFn: agriculturalProductsService.getAll,
+    queryFn: () => agriculturalProductsService.getAll({ status: 'A' }),
   });
   const { data: formulations } = useQuery({
     queryKey: ['type-formulations'],
-    queryFn: typeFormulationsService.getAll,
+    queryFn: () => typeFormulationsService.getAll({ status: 'A' }),
   });
 
   const orderOf = useMemo(() => {

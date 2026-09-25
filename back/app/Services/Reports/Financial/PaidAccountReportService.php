@@ -150,23 +150,23 @@ class PaidAccountReportService
     public function cropOptions(?int $agriculturalYearId = null): array
     {
         $years = AgriculturalYear::query()
-            ->orderByRaw("CASE WHEN status = 'A' THEN 0 ELSE 1 END")
+            ->where('status', 'A')
             ->orderByDesc('opening_date')
             ->get(['id', 'name', 'opening_date', 'closing_date', 'status']);
 
-        $selectedYearId = $agriculturalYearId
-            ?? $years->firstWhere('status', 'A')?->id
-            ?? $years->first()?->id;
+        $selectedYearId = $agriculturalYearId && $years->contains('id', $agriculturalYearId)
+            ? $agriculturalYearId
+            : $years->first()?->id;
 
         $crops = Crop::query()
+            ->where('status', 'A')
             ->when($selectedYearId, fn (Builder $query, $id): Builder => $query->where('agricultural_year_id', $id))
-            ->orderByRaw("CASE WHEN status = 'A' THEN 0 ELSE 1 END")
             ->orderByDesc('opening_date')
             ->get(['id', 'agricultural_year_id', 'name', 'opening_date', 'closing_date', 'status']);
 
         return [
             'selected_agricultural_year_id' => $selectedYearId,
-            'selected_crop_id' => $crops->firstWhere('status', 'A')?->id ?? $crops->first()?->id,
+            'selected_crop_id' => $crops->first()?->id,
             'agricultural_years' => $years,
             'crops' => $crops,
         ];

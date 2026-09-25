@@ -35,7 +35,7 @@ interface Props { item?: Product | null; onSave: () => void; onCancel: () => voi
 export function ProductForm({ item, onSave, onCancel }: Props) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const { data: groups = [], isLoading: lg } = useQuery({ queryKey: ['product-groups'], queryFn: productGroupsService.getAll });
+  const { data: groups = [], isLoading: lg } = useQuery({ queryKey: ['product-groups', 'active-options'], queryFn: () => productGroupsService.getAll({ status: 'A' }) });
   const [subGroups, setSubGroups] = useState<SubGroupProduct[]>([]);
   const [loadingSubGroups, setLoadingSubGroups] = useState(false);
 

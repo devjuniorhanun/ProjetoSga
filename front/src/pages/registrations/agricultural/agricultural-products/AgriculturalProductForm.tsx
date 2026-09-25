@@ -42,8 +42,8 @@ export function AgriculturalProductForm({ item, onSave, onCancel }: Props) {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('data');
 
-  const { data: products = [], isLoading: lp } = useQuery({ queryKey: ['products'], queryFn: productsService.getAll });
-  const { data: formulations = [], isLoading: lf } = useQuery({ queryKey: ['type-formulations'], queryFn: typeFormulationsService.getAll });
+  const { data: products = [], isLoading: lp } = useQuery({ queryKey: ['products', 'active-options'], queryFn: () => productsService.getAll({ status: 'A' }) });
+  const { data: formulations = [], isLoading: lf } = useQuery({ queryKey: ['type-formulations', 'active-options'], queryFn: () => typeFormulationsService.getAll({ status: 'A' }) });
 
   const [ingredients, setIngredients] = useState<ActiveIngredientItem[]>(() => toIngredientList(item?.active_ingredient));
   const [newIngredient, setNewIngredient] = useState('');

@@ -52,9 +52,9 @@ export function EntryInvoiceProductForm({ item, onSave, onCancel }: Props) {
   const [items, setItems] = useState<EntryInvoiceItem[]>(item?.items ?? []);
   const [showItemModal, setShowItemModal] = useState(false);
 
-  const { data: suppliers = [], isLoading: ls } = useQuery({ queryKey: ['suppliers'], queryFn: suppliersService.getAll });
-  const { data: producers = [], isLoading: lp } = useQuery({ queryKey: ['producers'], queryFn: producersService.getAll });
-  const { data: products = [], isLoading: lprod } = useQuery({ queryKey: ['products'], queryFn: productsService.getAll });
+  const { data: suppliers = [], isLoading: ls } = useQuery({ queryKey: ['suppliers', 'active-options'], queryFn: () => suppliersService.getAll({ status: 'A' }) });
+  const { data: producers = [], isLoading: lp } = useQuery({ queryKey: ['producers', 'active-options'], queryFn: () => producersService.getAll({ status: 'A' }) });
+  const { data: products = [], isLoading: lprod } = useQuery({ queryKey: ['products', 'active-options'], queryFn: () => productsService.getAll({ status: 'A' }) });
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, setError } = useForm<FormData>({
     resolver: zodResolver(schema),

@@ -13,7 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 
 export default function VarietiesList() {
   const { data: varieties, isLoading, remove } = useCrud<VarietyCulture>('varieties', varietiesService);
-  const { data: cultures = [] } = useQuery<Culture[]>({ queryKey: ['cultures'], queryFn: culturesService.getAll });
+  const { data: cultures = [] } = useQuery<Culture[]>({ queryKey: ['cultures', 'active-options'], queryFn: () => culturesService.getAll({ status: 'A' }) });
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<VarietyCulture | null>(null);
   const [showForm, setShowForm] = useState(false);

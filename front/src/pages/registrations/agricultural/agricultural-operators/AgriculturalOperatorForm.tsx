@@ -24,8 +24,8 @@ interface Props { item?: AgriculturalOperator | null; onSave: () => void; onCanc
 export function AgriculturalOperatorForm({ item, onSave, onCancel }: Props) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const { data: suppliers = [], isLoading: ls } = useQuery({ queryKey: ['suppliers'], queryFn: suppliersService.getAll });
-  const { data: typeSuppliers = [], isLoading: lt } = useQuery({ queryKey: ['type-suppliers'], queryFn: typeSuppliersService.getAll });
+  const { data: suppliers = [], isLoading: ls } = useQuery({ queryKey: ['suppliers', 'active-options'], queryFn: () => suppliersService.getAll({ status: 'A' }) });
+  const { data: typeSuppliers = [], isLoading: lt } = useQuery({ queryKey: ['type-suppliers', 'active-options'], queryFn: () => typeSuppliersService.getAll({ status: 'A' }) });
   const le = ls || lt;
 
   const employees = useMemo(() => {

@@ -31,7 +31,7 @@ export function ProducerForm({ item, onSave, onCancel }: Props) {
 
   const { data: owners = [], isLoading: loadingOwners } = useQuery({
     queryKey: ['owners'],
-    queryFn: ownersService.getAll,
+    queryFn: () => ownersService.getAll({ status: 'A' }),
   });
 
   const { handleSubmit, setValue, watch, formState: { errors }, setError } = useForm<FormData>({

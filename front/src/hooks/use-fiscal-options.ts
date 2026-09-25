@@ -8,7 +8,7 @@ import { typePayAccountsService } from '@/lib/api-services-financial-entries';
 import type { ComboboxOption } from '@/components/ui/combobox';
 import type { FiscalEntryType } from '@/types/fiscal';
 
-const active = <T extends { status?: string }>(rows: T[]) => rows.filter((r) => !r.status || r.status === 'A');
+const active = <T extends { status?: string }>(rows: T[]) => rows.filter((r) => r.status === 'A');
 
 const normalizeCatalogName = (value?: string | null) =>
   String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
@@ -31,16 +31,16 @@ const productGroupByEntry: Partial<Record<FiscalEntryType, string>> = {
 
 /** Listas de apoio compartilhadas pelas telas fiscais, de estoque e de frete. */
 export function useFiscalOptions(entryType?: FiscalEntryType) {
-  const suppliers = useQuery({ queryKey: ['suppliers'], queryFn: suppliersService.getAll });
-  const supplierTypes = useQuery({ queryKey: ['type-suppliers'], queryFn: typeSuppliersService.getAll });
-  const producers = useQuery({ queryKey: ['producers'], queryFn: producersService.getAll });
-  const costCenters = useQuery({ queryKey: ['cost-centers'], queryFn: costCentersService.getAll });
-  const farms = useQuery({ queryKey: ['farms'], queryFn: farmsService.getAll });
-  const fields = useQuery({ queryKey: ['fields'], queryFn: fieldsService.getAll });
-  const products = useQuery({ queryKey: ['products'], queryFn: productsService.getAll });
-  const cultures = useQuery({ queryKey: ['cultures'], queryFn: culturesService.getAll });
-  const varieties = useQuery({ queryKey: ['varieties'], queryFn: varietiesService.getAll });
-  const crops = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
+  const suppliers = useQuery({ queryKey: ['suppliers', 'active-options'], queryFn: () => suppliersService.getAll({ status: 'A' }) });
+  const supplierTypes = useQuery({ queryKey: ['type-suppliers', 'active-options'], queryFn: () => typeSuppliersService.getAll({ status: 'A' }) });
+  const producers = useQuery({ queryKey: ['producers', 'active-options'], queryFn: () => producersService.getAll({ status: 'A' }) });
+  const costCenters = useQuery({ queryKey: ['cost-centers', 'active-options'], queryFn: () => costCentersService.getAll({ status: 'A' }) });
+  const farms = useQuery({ queryKey: ['farms', 'active-options'], queryFn: () => farmsService.getAll({ status: 'A' }) });
+  const fields = useQuery({ queryKey: ['fields', 'active-options'], queryFn: () => fieldsService.getAll({ status: 'A' }) });
+  const products = useQuery({ queryKey: ['products', 'active-options'], queryFn: () => productsService.getAll({ status: 'A' }) });
+  const cultures = useQuery({ queryKey: ['cultures', 'active-options'], queryFn: () => culturesService.getAll({ status: 'A' }) });
+  const varieties = useQuery({ queryKey: ['varieties', 'active-options'], queryFn: () => varietiesService.getAll({ status: 'A' }) });
+  const crops = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
   const stockLocations = useQuery({
     queryKey: ['stock-locations', 'options'],
     queryFn: () => stockLocationsService.getAll({ per_page: 200, status: 'A' }),
@@ -49,7 +49,7 @@ export function useFiscalOptions(entryType?: FiscalEntryType) {
     queryKey: ['freight-rates', 'options'],
     queryFn: () => freightRatesService.getAll({ per_page: 200, status: 'A' }),
   });
-  const typePayAccounts = useQuery({ queryKey: ['type-pay-accounts'], queryFn: typePayAccountsService.getAll });
+  const typePayAccounts = useQuery({ queryKey: ['type-pay-accounts', 'active-options'], queryFn: () => typePayAccountsService.getAll({ status: 'A' }) });
 
   const requiredSupplierType = entryType ? supplierTypeByEntry[entryType] : undefined;
   const allowedSupplierTypeIds = new Set(

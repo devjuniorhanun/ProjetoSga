@@ -45,8 +45,8 @@ export function PlotFieldForm({ item, onSave, onCancel }: Props) {
   const [loading, setLoading] = useState(false);
   const [areaDisplay, setAreaDisplay] = useState(() => item?.area != null ? formatAreaDisplay(item.area) : '');
 
-  const { data: fields = [], isLoading: loadingFields } = useQuery({ queryKey: ['fields'], queryFn: fieldsService.getAll });
-  const { data: crops = [], isLoading: loadingCrops } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
+  const { data: fields = [], isLoading: loadingFields } = useQuery({ queryKey: ['fields', 'active-options'], queryFn: () => fieldsService.getAll({ status: 'A' }) });
+  const { data: crops = [], isLoading: loadingCrops } = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
   const [cropCultures, setCropCultures] = useState<{ id: string; name: string }[]>([]);
 
   const filteredCrops = useMemo(() => {

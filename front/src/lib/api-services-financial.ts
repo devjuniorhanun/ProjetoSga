@@ -20,10 +20,11 @@ export interface CostCenter {
 // Generic CRUD service factory
 function createCrudService<T extends { id: string }>(endpoint: string) {
   return {
-    getAll: async (): Promise<T[]> => {
-      const { data } = await api.get(endpoint);
+    getAll: async (params?: Record<string, unknown>): Promise<T[]> => {
+      const { data } = await api.get(endpoint, { params });
       const result = data.data ?? data;
-      return Array.isArray(result) ? result : [];
+      const rows = Array.isArray(result) ? result : [];
+      return params?.status ? rows.filter((item) => (item as T & { status?: string }).status === params.status) : rows;
     },
     getById: async (id: string): Promise<T> => {
       const { data } = await api.get(`${endpoint}/${id}`);

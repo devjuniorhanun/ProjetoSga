@@ -34,9 +34,9 @@ export default function GeneratedContractsPage() {
     queryFn: () => serviceContractsService.list(filters),
   });
 
-  const { data: crops = [] } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
-  const { data: producers = [] } = useQuery({ queryKey: ['producers'], queryFn: producersService.getAll });
-  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers'], queryFn: suppliersService.getAll });
+  const { data: crops = [] } = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
+  const { data: producers = [] } = useQuery({ queryKey: ['producers', 'active-options'], queryFn: () => producersService.getAll({ status: 'A' }) });
+  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers', 'active-options'], queryFn: () => suppliersService.getAll({ status: 'A' }) });
 
   const cropOptions = useMemo(
     () => crops.filter((c) => c.status === 'A').map((c) => ({ value: String(c.id), label: c.name })),

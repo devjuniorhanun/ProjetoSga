@@ -24,9 +24,9 @@ export default function HarvestReleasesList() {
   const [driverFilter, setDriverFilter] = useState('');
   const [supplierFilter, setSupplierFilter] = useState('');
 
-  const { data: crops = [] } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
-  const { data: drivers = [] } = useQuery({ queryKey: ['drivers'], queryFn: driversService.getAll });
-  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers'], queryFn: suppliersService.getAll });
+  const { data: crops = [] } = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
+  const { data: drivers = [] } = useQuery({ queryKey: ['drivers', 'active-options'], queryFn: () => driversService.getAll({ status: 'A' }) });
+  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers', 'active-options'], queryFn: () => suppliersService.getAll({ status: 'A' }) });
 
   const filters = { crop_id: cropFilter, driver_id: driverFilter, supplier_id: supplierFilter };
   const { data = [], isLoading } = useQuery({

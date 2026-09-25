@@ -14,18 +14,18 @@ import { suppliersService } from '@/lib/api-services';
 export interface Option { value: string; label: string }
 
 export function useFuelOptions() {
-  const { data: stations = [] } = useQuery({ queryKey: ['fuel-stations'], queryFn: fuelStationsService.getAll });
-  const { data: tanks = [] } = useQuery({ queryKey: ['fuel-tanks'], queryFn: fuelTanksService.getAll });
-  const { data: registers = [] } = useQuery({ queryKey: ['fuel-registers'], queryFn: fuelRegistersService.getAll });
-  const { data: stationProducts = [] } = useQuery({ queryKey: ['fuel-station-products'], queryFn: fuelStationProductsService.getAll });
-  const { data: products = [] } = useQuery({ queryKey: ['products'], queryFn: productsService.getAll });
-  const { data: fleets = [] } = useQuery({ queryKey: ['fleets'], queryFn: fleetsService.getAll });
-  const { data: operators = [] } = useQuery({ queryKey: ['agricultural-operators'], queryFn: agriculturalOperatorsService.getAll });
-  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers'], queryFn: suppliersService.getAll });
+  const { data: stations = [] } = useQuery({ queryKey: ['fuel-stations', 'active-options'], queryFn: () => fuelStationsService.getAll({ status: 'A' }) });
+  const { data: tanks = [] } = useQuery({ queryKey: ['fuel-tanks', 'active-options'], queryFn: () => fuelTanksService.getAll({ status: 'A' }) });
+  const { data: registers = [] } = useQuery({ queryKey: ['fuel-registers', 'active-options'], queryFn: () => fuelRegistersService.getAll({ status: 'A' }) });
+  const { data: stationProducts = [] } = useQuery({ queryKey: ['fuel-station-products', 'active-options'], queryFn: () => fuelStationProductsService.getAll({ status: 'A' }) });
+  const { data: products = [] } = useQuery({ queryKey: ['products', 'active-options'], queryFn: () => productsService.getAll({ status: 'A' }) });
+  const { data: fleets = [] } = useQuery({ queryKey: ['fleets', 'active-options'], queryFn: () => fleetsService.getAll({ status: 'A' }) });
+  const { data: operators = [] } = useQuery({ queryKey: ['agricultural-operators', 'active-options'], queryFn: () => agriculturalOperatorsService.getAll({ status: 'A' }) });
+  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers', 'active-options'], queryFn: () => suppliersService.getAll({ status: 'A' }) });
 
   /** Mantém apenas registros ativos (quando a entidade possuir status). */
   const onlyActive = <T extends { status?: string }>(list: T[]): T[] =>
-    list.filter((i) => i.status === undefined || i.status === null || i.status === 'A');
+    list.filter((i) => i.status === 'A');
 
   const stationOptions: Option[] = onlyActive(stations).map((s) => ({ value: String(s.id), label: s.name }));
   const productOptions: Option[] = onlyActive(products).map((p) => ({ value: String(p.id), label: p.name }));
@@ -73,11 +73,11 @@ export function useFuelOptions() {
 export function useMaintenancePlanOptions() {
   const { data: plans = [] } = useQuery({
     queryKey: ['fleet-maintenance-plans'],
-    queryFn: fleetMaintenancePlansService.getAll,
+    queryFn: () => fleetMaintenancePlansService.getAll({ status: 'A' }),
   });
   const plansByFleet = (fleetId?: string): Option[] =>
     plans
-      .filter((p) => !fleetId || String(p.fleet_id) === String(fleetId))
+      .filter((p) => p.status === 'A' && (!fleetId || String(p.fleet_id) === String(fleetId)))
       .map((p) => ({ value: String(p.id), label: p.description || String(p.id) }));
   return { plans, plansByFleet };
 }

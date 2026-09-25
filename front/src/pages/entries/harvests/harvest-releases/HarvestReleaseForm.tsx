@@ -78,11 +78,11 @@ export function HarvestReleaseForm({ item, onSave, onCancel }: Props) {
   const [loading, setLoading] = useState(false);
   const sessionValues = item ? {} : getSessionValues();
 
-  const { data: crops = [], isLoading: l1 } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
-  const { data: drivers = [], isLoading: l2 } = useQuery({ queryKey: ['drivers'], queryFn: driversService.getAll });
-  const { data: owners = [], isLoading: l3 } = useQuery({ queryKey: ['owners'], queryFn: ownersService.getAll });
-  const { data: warehouses = [], isLoading: l5 } = useQuery({ queryKey: ['warehouses'], queryFn: warehousesService.getAll });
-  const { data: lanyards = [], isLoading: l6 } = useQuery({ queryKey: ['lanyards'], queryFn: lanyardsService.getAll });
+  const { data: crops = [], isLoading: l1 } = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
+  const { data: drivers = [], isLoading: l2 } = useQuery({ queryKey: ['drivers', 'active-options'], queryFn: () => driversService.getAll({ status: 'A' }) });
+  const { data: owners = [], isLoading: l3 } = useQuery({ queryKey: ['owners', 'active-options'], queryFn: () => ownersService.getAll({ status: 'A' }) });
+  const { data: warehouses = [], isLoading: l5 } = useQuery({ queryKey: ['warehouses', 'active-options'], queryFn: () => warehousesService.getAll({ status: 'A' }) });
+  const { data: lanyards = [], isLoading: l6 } = useQuery({ queryKey: ['lanyards', 'active-options'], queryFn: () => lanyardsService.getAll({ status: 'A' }) });
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors }, setError } = useForm<FormData>({
     resolver: zodResolver(schema),

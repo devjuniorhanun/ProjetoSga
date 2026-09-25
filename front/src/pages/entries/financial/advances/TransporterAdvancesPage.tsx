@@ -61,11 +61,11 @@ export default function TransporterAdvancesPage() {
   const [selected, setSelected] = useState<TransporterSupplierSummary | null>(null);
   const [valueDisplay, setValueDisplay] = useState('');
 
-  const { data: crops = [] } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
-  const { data: producers = [] } = useQuery({ queryKey: ['producers'], queryFn: producersService.getAll });
+  const { data: crops = [] } = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
+  const { data: producers = [] } = useQuery({ queryKey: ['producers', 'active-options'], queryFn: () => producersService.getAll({ status: 'A' }) });
   const { data: typePayAccounts = [] } = useQuery({
     queryKey: ['type-pay-accounts'],
-    queryFn: typePayAccountsService.getAll,
+    queryFn: () => typePayAccountsService.getAll({ status: 'A' }),
   });
 
   const activeCrops = crops.filter((c) => c.status === 'A');

@@ -25,7 +25,7 @@ interface Props { item?: FleetModel | null; onSave: () => void; onCancel: () => 
 export function FleetModelForm({ item, onSave, onCancel }: Props) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const { data: brands = [], isLoading: loadingBrands } = useQuery({ queryKey: ['fleet-brands'], queryFn: fleetBrandsService.getAll });
+  const { data: brands = [], isLoading: loadingBrands } = useQuery({ queryKey: ['fleet-brands', 'active-options'], queryFn: () => fleetBrandsService.getAll({ status: 'A' }) });
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, setError } = useForm<FormData>({
     resolver: zodResolver(schema),

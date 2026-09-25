@@ -58,12 +58,12 @@ export function PayAccountForm({ item, onSave, onCancel }: Props) {
   const [loading, setLoading] = useState(false);
   const [valueDisplay, setValueDisplay] = useState(item ? formatCurrencyBRL(item.value) : '');
 
-  const { data: centers = [] } = useQuery({ queryKey: ['cost-centers'], queryFn: costCentersService.getAll });
-  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers'], queryFn: suppliersService.getAll });
-  const { data: producers = [] } = useQuery({ queryKey: ['producers'], queryFn: producersService.getAll });
-  const { data: typeAccounts = [] } = useQuery({ queryKey: ['type-pay-accounts'], queryFn: typePayAccountsService.getAll });
-  const { data: agriculturalYears = [] } = useQuery({ queryKey: ['agricultural-years'], queryFn: agriculturalYearsService.getAll });
-  const { data: crops = [] } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
+  const { data: centers = [] } = useQuery({ queryKey: ['cost-centers', 'active-options'], queryFn: () => costCentersService.getAll({ status: 'A' }) });
+  const { data: suppliers = [] } = useQuery({ queryKey: ['suppliers', 'active-options'], queryFn: () => suppliersService.getAll({ status: 'A' }) });
+  const { data: producers = [] } = useQuery({ queryKey: ['producers', 'active-options'], queryFn: () => producersService.getAll({ status: 'A' }) });
+  const { data: typeAccounts = [] } = useQuery({ queryKey: ['type-pay-accounts', 'active-options'], queryFn: () => typePayAccountsService.getAll({ status: 'A' }) });
+  const { data: agriculturalYears = [] } = useQuery({ queryKey: ['agricultural-years', 'active-options'], queryFn: () => agriculturalYearsService.getAll({ status: 'A' }) });
+  const { data: crops = [] } = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
 
   const { handleSubmit, setValue, watch, register, formState: { errors }, setError } = useForm<FormData>({
     resolver: zodResolver(schema),

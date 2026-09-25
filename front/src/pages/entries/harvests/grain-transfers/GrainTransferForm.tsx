@@ -82,10 +82,10 @@ export function GrainTransferForm({ item, onSave, onCancel }: Props) {
   const cultureId = watch('culture_id');
   const quantityKg = watch('quantity_kg');
 
-  const { data: crops = [] } = useQuery({ queryKey: ['crops'], queryFn: cropsService.getAll });
-  const { data: producers = [] } = useQuery({ queryKey: ['producers'], queryFn: producersService.getAll });
-  const { data: warehouses = [] } = useQuery({ queryKey: ['warehouses'], queryFn: warehousesService.getAll });
-  const { data: cultures = [] } = useQuery({ queryKey: ['cultures'], queryFn: culturesService.getAll });
+  const { data: crops = [] } = useQuery({ queryKey: ['crops', 'active-options'], queryFn: () => cropsService.getAll({ status: 'A' }) });
+  const { data: producers = [] } = useQuery({ queryKey: ['producers', 'active-options'], queryFn: () => producersService.getAll({ status: 'A' }) });
+  const { data: warehouses = [] } = useQuery({ queryKey: ['warehouses', 'active-options'], queryFn: () => warehousesService.getAll({ status: 'A' }) });
+  const { data: cultures = [] } = useQuery({ queryKey: ['cultures', 'active-options'], queryFn: () => culturesService.getAll({ status: 'A' }) });
 
   // Somente proprietários com forma de pagamento "T" (transferência) são elegíveis.
   const ownersQuery = useQuery({

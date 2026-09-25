@@ -20,6 +20,7 @@ class DefensiveOrderReportController extends Controller
         ]);
 
         $crops = Crop::query()
+            ->where('status', 'A')
             ->whereHas('defensiveOrders')
             ->orderBy('name')
             ->get(['id', 'name']);
@@ -27,6 +28,7 @@ class DefensiveOrderReportController extends Controller
         $operations = collect();
         if (!empty($filters['crop_id'])) {
             $operations = TypeOperation::query()
+                ->where('status', 'A')
                 ->whereHas('defensiveOrders', fn (Builder $query) => $query->where('crop_id', $filters['crop_id']))
                 ->orderBy('name')
                 ->get(['id', 'name']);
@@ -35,6 +37,7 @@ class DefensiveOrderReportController extends Controller
         $fields = collect();
         if (!empty($filters['crop_id']) && !empty($filters['type_operation_id'])) {
             $fields = Field::query()
+                ->where('status', 'A')
                 ->whereHas('defensiveOrders', fn (Builder $query) => $query
                     ->where('crop_id', $filters['crop_id'])
                     ->where('type_operation_id', $filters['type_operation_id']))

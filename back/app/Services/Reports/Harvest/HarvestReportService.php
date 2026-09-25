@@ -10,12 +10,11 @@ class HarvestReportService
 {
     public function productivityOptions(?int $cropId = null): array
     {
-        $crops = DB::table('crops')->whereNull('deleted_at')
+        $crops = DB::table('crops')->whereNull('deleted_at')->where('status', 'A')
             ->select('id', 'name', 'opening_date', 'closing_date', 'status')
-            ->orderByRaw("CASE WHEN status = 'A' THEN 0 ELSE 1 END")
             ->orderByDesc('opening_date')->orderByDesc('id')->get();
-        $defaultCropId = $crops->firstWhere('status', 'A')?->id ?? $crops->first()?->id;
-        $selectedCropId = $cropId ?: $defaultCropId;
+        $defaultCropId = $crops->first()?->id;
+        $selectedCropId = $cropId && $crops->contains('id', $cropId) ? $cropId : $defaultCropId;
         $base = DB::table('harvest_releases as hr')
             ->join('plot_fields as pf', 'pf.id', '=', 'hr.plot_field_id')
             ->join('fields as f', 'f.id', '=', 'pf.field_id')->join('farms as farm', 'farm.id', '=', 'f.farm_id')
@@ -24,7 +23,11 @@ class HarvestReportService
             ->join('variety_cultures as v', 'v.id', '=', 'pf.variety_culture_id')
             ->join('warehouses as w', 'w.id', '=', 'hr.warehouse_id')->join('drivers as d', 'd.id', '=', 'hr.driver_id')
             ->join('lanyards as l', 'l.id', '=', 'hr.lanyard_id')
-            ->where('hr.crop_id', $selectedCropId)->where('hr.status', 'A')->whereNull('hr.deleted_at');
+            ->where('hr.crop_id', $selectedCropId)->where('hr.status', 'A')->whereNull('hr.deleted_at')
+            ->where('pf.status', 'A')->where('f.status', 'A')->where('farm.status', 'A')
+            ->where('p.status', 'A')->where('po.status', 'A')->where('ho.status', 'A')
+            ->where('c.status', 'A')->where('v.status', 'A')->where('w.status', 'A')
+            ->where('d.status', 'A')->where('l.status', 'A');
         $items = $selectedCropId ? $base->select('farm.id as farm_id', 'farm.name as farm_name',
             'p.id as producer_id', 'po.corporate_name as producer_name', 'ho.id as owner_id',
             'ho.corporate_name as owner_name', 'pf.id as plot_field_id', 'pf.name as plot_name',
@@ -38,7 +41,7 @@ class HarvestReportService
 
         return [
             'crops' => $crops,
-            'active_crops' => $crops->where('status', 'A')->values(),
+            'active_crops' => $crops->values(),
             'default_crop_id' => $defaultCropId,
             'selected_crop_id' => $selectedCropId,
             'producers' => $options('producer_id', 'producer_name'),

@@ -29,8 +29,8 @@ interface Props { item?: Warehouse | null; onSave: () => void; onCancel: () => v
 export function WarehouseForm({ item, onSave, onCancel }: Props) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const { data: suppliers = [], isLoading: loadingSuppliers } = useQuery({ queryKey: ['suppliers'], queryFn: suppliersService.getAll });
-  const { data: typeSuppliers = [], isLoading: loadingTypes } = useQuery({ queryKey: ['type-suppliers'], queryFn: typeSuppliersService.getAll });
+  const { data: suppliers = [], isLoading: loadingSuppliers } = useQuery({ queryKey: ['suppliers', 'active-options'], queryFn: () => suppliersService.getAll({ status: 'A' }) });
+  const { data: typeSuppliers = [], isLoading: loadingTypes } = useQuery({ queryKey: ['type-suppliers', 'active-options'], queryFn: () => typeSuppliersService.getAll({ status: 'A' }) });
 
   const warehouseSuppliers = useMemo(() => {
     const armazemType = typeSuppliers.find((t) => t.name.toUpperCase().includes('ARMAZ'));

@@ -38,7 +38,7 @@ export function FieldForm({ item, onSave, onCancel }: Props) {
 
   const { data: farms = [], isLoading: loadingFarms } = useQuery({
     queryKey: ['farms'],
-    queryFn: farmsService.getAll,
+    queryFn: () => farmsService.getAll({ status: 'A' }),
   });
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, setError } = useForm<FormData>({

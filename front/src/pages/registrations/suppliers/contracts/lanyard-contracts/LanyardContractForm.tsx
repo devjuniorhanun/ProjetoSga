@@ -40,11 +40,11 @@ export function LanyardContractForm({ item, onSave, onCancel }: Props) {
   });
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers'],
-    queryFn: suppliersService.getAll,
+    queryFn: () => suppliersService.getAll({ status: 'A' }),
   });
   const { data: typeSuppliers = [] } = useQuery({
     queryKey: ['type-suppliers'],
-    queryFn: typeSuppliersService.getAll,
+    queryFn: () => typeSuppliersService.getAll({ status: 'A' }),
   });
 
   const colhedorTypeId = typeSuppliers.find(

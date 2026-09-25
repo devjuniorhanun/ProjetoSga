@@ -38,12 +38,12 @@ export function CropForm({ item, onSave, onCancel }: Props) {
 
   const { data: agriculturalYears = [], isLoading: loadingYears } = useQuery({
     queryKey: ['agricultural-years'],
-    queryFn: agriculturalYearsService.getAll,
+    queryFn: () => agriculturalYearsService.getAll({ status: 'A' }),
   });
 
   const { data: cultures = [], isLoading: loadingCultures } = useQuery({
     queryKey: ['cultures'],
-    queryFn: culturesService.getAll,
+    queryFn: () => culturesService.getAll({ status: 'A' }),
   });
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, setError } = useForm<FormData>({
