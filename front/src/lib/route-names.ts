@@ -43,7 +43,6 @@ export const routeNames: Record<string, string> = {
   'sub-group-products': 'Sub Grupos de Produtos',
   'inventory': 'Estoque',
   'stock-locations': 'Locais de Estoque',
-  'seed-product-profiles': 'Perfis de Semente',
   'agricultural-service-types': 'Tipos de Serviço Agrícola',
   'freight-rates': 'Tarifas de Frete',
   'purpose-products': 'Finalidade de Produtos',

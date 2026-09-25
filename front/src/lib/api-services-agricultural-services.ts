@@ -66,7 +66,31 @@ export const seedTreatmentsService = {
     return unwrapItem<SeedTreatment>(data);
   },
   create: async (payload: SeedTreatmentPayload): Promise<SeedTreatment> => {
-    const { data } = await api.post(SEED_TREATMENTS_ENDPOINT, payload);
+    const { data } = await api.post(SEED_TREATMENTS_ENDPOINT, {
+      service_date: payload.treatment_date,
+      crop_id: payload.crop_id,
+      culture_id: payload.culture_id,
+      number_of_treatment_batches: payload.batch_count,
+      observation: payload.observation,
+      seeds: (payload.seeds ?? []).map((seed) => ({
+        product_id: seed.product_id,
+        culture_id: seed.culture_id,
+        variety_culture_id: seed.variety_id,
+        product_stock_id: seed.product_stock_id,
+        lot_number: seed.batch,
+        treated_quantity: seed.treated_quantity,
+        unit: seed.unit,
+        treatment_batch_quantity: seed.quantity_per_batch
+          ?? (Number(seed.treated_quantity) / Number(payload.batch_count)),
+      })),
+      products: (payload.chemicals ?? []).map((chemical) => ({
+        product_id: chemical.product_id,
+        product_stock_id: chemical.product_stock_id,
+        dose_per_batch: chemical.dose_per_batch,
+        real_quantity: chemical.actual_quantity,
+        unit: chemical.unit,
+      })),
+    });
     return unwrapItem<SeedTreatment>(data);
   },
   /** Converte semente não tratada em tratada e baixa os químicos. */

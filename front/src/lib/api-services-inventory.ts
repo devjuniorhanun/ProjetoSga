@@ -27,20 +27,6 @@ export interface StockLocation {
   notes?: string | null;
 }
 
-export interface SeedProductProfile {
-  id: string;
-  product_id: string;
-  product_name?: string;
-  culture_id: string;
-  culture_name?: string;
-  variety_id: string;
-  variety_name?: string;
-  category: string;
-  seed_class: string;
-  unit: string;
-  status: ActiveStatus;
-}
-
 export interface AgriculturalServiceType {
   id: string;
   name: string;
@@ -100,9 +86,6 @@ export function createInventoryCrudService<T extends { id: string }>(endpoint: s
 
 export const stockLocationsService = createInventoryCrudService<StockLocation>(
   `${INVENTORY_BASE}/stock-locations`,
-);
-export const seedProductProfilesService = createInventoryCrudService<SeedProductProfile>(
-  `${INVENTORY_BASE}/seed-product-profiles`,
 );
 export const agriculturalServiceTypesService = createInventoryCrudService<AgriculturalServiceType>(
   `${INVENTORY_BASE}/agricultural-service-types`,

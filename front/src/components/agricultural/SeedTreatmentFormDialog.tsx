@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2 } from 'lucide-react';
 import { seedTreatmentsService } from '@/lib/api-services-agricultural-services';
+import { inventoryBalancesService } from '@/lib/api-services-inventory-releases';
 import { useAgriculturalOptions } from '@/hooks/use-agricultural-options';
 import { chemicalQuantityFromDose, seedTreatmentIsValid } from '@/lib/agricultural-rules';
 import type { SeedTreatmentChemical, SeedTreatmentPayload, SeedTreatmentSeed } from '@/types/agricultural';
@@ -24,6 +25,11 @@ const num = (value: string) => Number(String(value).replace(',', '.')) || 0;
 export function SeedTreatmentFormDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const options = useAgriculturalOptions();
+  const balances = useQuery({
+    queryKey: ['inventory-balances', 'seed-treatment-options'],
+    queryFn: () => inventoryBalancesService.list({ per_page: 100 }),
+    enabled: open,
+  });
 
   const [cropId, setCropId] = useState('');
   const [cultureId, setCultureId] = useState('');
@@ -65,6 +71,19 @@ export function SeedTreatmentFormDialog({ open, onOpenChange }: Props) {
       ...prev,
       { product_id: '', product_stock_id: '', dose_per_batch: null, actual_quantity: 0, unit: '' },
     ]);
+
+  const stockOptions = (productId: string, treatmentStatus?: string) =>
+    (balances.data?.items ?? [])
+      .filter((stock) =>
+        String(stock.product_id) === String(productId)
+        && (!treatmentStatus || stock.treatment_status === treatmentStatus)
+        && Number(stock.quantity) - Number(stock.reserved_quantity ?? 0) > 0,
+      )
+      .map((stock) => ({
+        value: String(stock.id),
+        label: [stock.stock_location_name ?? stock.location_name, stock.batch && `Lote ${stock.batch}`, stock.variety_name, stock.sieve && `Peneira ${stock.sieve}`]
+          .filter(Boolean).join(' — '),
+      }));
 
   const mutation = useMutation({
     mutationFn: (payload: SeedTreatmentPayload) => seedTreatmentsService.create(payload),
@@ -186,7 +205,7 @@ export function SeedTreatmentFormDialog({ open, onOpenChange }: Props) {
                     <Combobox
                       options={options.productOptions}
                       value={seed.product_id}
-                      onValueChange={(value) => setSeeds((prev) => prev.map((s, i) => (i === index ? { ...s, product_id: value } : s)))}
+                      onValueChange={(value) => setSeeds((prev) => prev.map((s, i) => (i === index ? { ...s, product_id: value, product_stock_id: '', batch: '', unit: '' } : s)))}
                       placeholder="Selecione"
                     />
                   </TableCell>
@@ -199,10 +218,21 @@ export function SeedTreatmentFormDialog({ open, onOpenChange }: Props) {
                     />
                   </TableCell>
                   <TableCell>
-                    <Input
+                    <Combobox
+                      options={stockOptions(seed.product_id, 'UNTREATED')}
                       value={seed.product_stock_id}
-                      onChange={(e) => setSeeds((prev) => prev.map((s, i) => (i === index ? { ...s, product_stock_id: e.target.value } : s)))}
-                      placeholder="Posição"
+                      onValueChange={(value) => {
+                        const stock = balances.data?.items.find((item) => String(item.id) === value);
+                        setSeeds((prev) => prev.map((s, i) => i === index ? {
+                          ...s,
+                          product_stock_id: value,
+                          culture_id: String(stock?.culture_id ?? cultureId),
+                          variety_id: String(stock?.variety_culture_id ?? s.variety_id),
+                          batch: stock?.batch ?? '',
+                          unit: stock?.unit ?? s.unit,
+                        } : s));
+                      }}
+                      placeholder="Selecione o lote"
                     />
                   </TableCell>
                   <TableCell>
@@ -259,15 +289,23 @@ export function SeedTreatmentFormDialog({ open, onOpenChange }: Props) {
                     <Combobox
                       options={options.productOptions}
                       value={chemical.product_id}
-                      onValueChange={(value) => setChemicals((prev) => prev.map((c, i) => (i === index ? { ...c, product_id: value } : c)))}
+                      onValueChange={(value) => setChemicals((prev) => prev.map((c, i) => (i === index ? { ...c, product_id: value, product_stock_id: '', unit: '' } : c)))}
                       placeholder="Selecione"
                     />
                   </TableCell>
                   <TableCell>
-                    <Input
+                    <Combobox
+                      options={stockOptions(chemical.product_id)}
                       value={chemical.product_stock_id}
-                      onChange={(e) => setChemicals((prev) => prev.map((c, i) => (i === index ? { ...c, product_stock_id: e.target.value } : c)))}
-                      placeholder="Posição"
+                      onValueChange={(value) => {
+                        const stock = balances.data?.items.find((item) => String(item.id) === value);
+                        setChemicals((prev) => prev.map((c, i) => i === index ? {
+                          ...c,
+                          product_stock_id: value,
+                          unit: stock?.unit ?? c.unit,
+                        } : c));
+                      }}
+                      placeholder="Selecione a posição"
                     />
                   </TableCell>
                   <TableCell>

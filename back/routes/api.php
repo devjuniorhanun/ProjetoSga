@@ -106,7 +106,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
-    Route::pattern('inventoryCatalog', 'stock-locations|seed-product-profiles|agricultural-service-types|freight-rates');
+    Route::pattern('inventoryCatalog', 'stock-locations|agricultural-service-types|freight-rates');
     Route::prefix('registrations/inventory')->group(function (): void {
         Route::get('{inventoryCatalog}', [InventoryCatalogController::class, 'index'])->middleware('permission:inventory.stock.view');
         Route::post('{inventoryCatalog}', [InventoryCatalogController::class, 'store'])->middleware('permission:inventory.stock.manage');

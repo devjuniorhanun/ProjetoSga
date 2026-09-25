@@ -140,7 +140,7 @@ return new class extends Migration
             $table->decimal('available_quantity_snapshot', 16, 3);
             $table->decimal('treated_quantity', 16, 3);
             $table->string('unit', 20);
-            $table->unsignedInteger('treatment_batch_quantity')->default(1);
+            $table->decimal('treatment_batch_quantity', 16, 3)->default(1);
             $table->string('treatment_batch_number', 100)->nullable();
             $table->timestamps();
             $table->unique(['seed_treatment_id', 'product_stock_id'], 'seed_treatment_stock_unique');

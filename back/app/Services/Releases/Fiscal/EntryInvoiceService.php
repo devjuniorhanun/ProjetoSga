@@ -136,7 +136,7 @@ class EntryInvoiceService
                     foreach ($item->seedLots as $lot) {
                         $varietyMatchesCulture = DB::table('variety_cultures')->where('id',$lot->variety_culture_id)->where('culture_id',$lot->culture_id)->exists();
                         if (!$varietyMatchesCulture) throw ValidationException::withMessages(['items'=>['A variedade selecionada não pertence à cultura informada.']]);
-                        $this->stocks->entry(['product_id'=>$item->product_id,'stock_location_id'=>$lot->stock_location_id,'batch'=>$lot->lot_number,'expiration_date'=>$lot->expiration_date,'treatment_status'=>'UNTREATED','quantity'=>$lot->quantity,'unit_value'=>$item->unit_value,'movement_type'=>'INVOICE_ENTRY','source_type'=>EntryInvoice::class,'source_id'=>$invoice->id,'created_by'=>$userId]);
+                        $this->stocks->entry(['product_id'=>$item->product_id,'stock_location_id'=>$lot->stock_location_id,'culture_id'=>$lot->culture_id,'variety_culture_id'=>$lot->variety_culture_id,'batch'=>$lot->lot_number,'sieve'=>$lot->sieve,'manufacturing_date'=>$lot->manufacturing_date,'expiration_date'=>$lot->expiration_date,'treatment_status'=>'UNTREATED','quantity'=>$lot->quantity,'unit_value'=>$item->unit_value,'movement_type'=>'INVOICE_ENTRY','source_type'=>EntryInvoice::class,'source_id'=>$invoice->id,'created_by'=>$userId]);
                     }
                 } else {
                     if (abs((float)$item->allocations->sum('quantity')-(float)$item->quantity)>.001) throw ValidationException::withMessages(['items'=>['A soma dos destinos deve ser igual à quantidade do item.']]);

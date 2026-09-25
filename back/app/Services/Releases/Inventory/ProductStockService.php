@@ -36,10 +36,33 @@ class ProductStockService
         }
         $batch = (string) ($data['batch'] ?? '');
         $treatment = (string) ($data['treatment_status'] ?? 'NOT_APPLICABLE');
-        $stock = DB::table('product_stocks')->where('product_id', $data['product_id'])->where('stock_location_id', $data['stock_location_id'])->where('batch', $batch)->where('treatment_status', $treatment)->lockForUpdate()->first();
+        $cultureId = $data['culture_id'] ?? null;
+        $varietyId = $data['variety_culture_id'] ?? null;
+        $sieve = filled($data['sieve'] ?? null) ? (string) $data['sieve'] : null;
+
+        $stockQuery = DB::table('product_stocks')
+            ->where('product_id', $data['product_id'])
+            ->where('stock_location_id', $data['stock_location_id'])
+            ->where('batch', $batch)
+            ->where('treatment_status', $treatment);
+
+        if (!empty($data['product_stock_id'])) {
+            $stockQuery->where('id', $data['product_stock_id']);
+        } else {
+            $cultureId === null ? $stockQuery->whereNull('culture_id') : $stockQuery->where('culture_id', $cultureId);
+            $varietyId === null ? $stockQuery->whereNull('variety_culture_id') : $stockQuery->where('variety_culture_id', $varietyId);
+            $sieve === null ? $stockQuery->whereNull('sieve') : $stockQuery->where('sieve', $sieve);
+        }
+
+        $stock = $stockQuery->lockForUpdate()->first();
         if (!$stock) {
+            if (!empty($data['product_stock_id']) || $quantity < 0) {
+                throw ValidationException::withMessages(['product_stock_id' => ['A posição de estoque informada não foi encontrada.']]);
+            }
             $id = DB::table('product_stocks')->insertGetId([
                 'product_id' => $data['product_id'], 'stock_location_id' => $data['stock_location_id'], 'batch' => $batch,
+                'culture_id' => $cultureId, 'variety_culture_id' => $varietyId, 'sieve' => $sieve,
+                'manufacturing_date' => $data['manufacturing_date'] ?? null,
                 'expiration_date' => $data['expiration_date'] ?? null, 'treatment_status' => $treatment,
                 'quantity' => 0, 'reserved_quantity' => 0, 'average_cost' => 0, 'total_value' => 0,
                 'created_at' => now(), 'updated_at' => now(),

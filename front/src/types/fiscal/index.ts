@@ -249,8 +249,14 @@ export interface InventoryBalance {
   product_name?: string;
   stock_location_id?: string | null;
   stock_location_name?: string;
+  location_name?: string;
   batch?: string | null;
-  treatment?: string | null;
+  treatment_status?: string | null;
+  culture_id?: string | null;
+  culture_name?: string | null;
+  variety_culture_id?: string | null;
+  variety_name?: string | null;
+  sieve?: string | null;
   quantity: number;
   reserved_quantity?: number;
   available_quantity?: number;

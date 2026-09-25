@@ -35,23 +35,15 @@ return new class extends Migration
             $table->index(['location_type', 'status'], 'stock_location_type_status');
         });
 
-        Schema::create('seed_product_profiles', function (Blueprint $table): void {
-            $table->id();
-            $table->foreignId('product_id')->unique()->constrained()->cascadeOnDelete();
-            $table->foreignId('culture_id')->constrained()->restrictOnDelete();
-            $table->foreignId('variety_culture_id')->constrained('variety_cultures')->restrictOnDelete();
-            $table->string('seed_category', 50)->nullable();
-            $table->string('seed_class', 50)->nullable();
-            $table->string('default_unit', 20);
-            $table->char('status', 1)->default('A');
-            $table->timestamps();
-        });
-
         Schema::create('product_stocks', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('product_id')->constrained()->restrictOnDelete();
             $table->foreignId('stock_location_id')->constrained()->restrictOnDelete();
+            $table->foreignId('culture_id')->nullable()->constrained()->restrictOnDelete();
+            $table->foreignId('variety_culture_id')->nullable()->constrained('variety_cultures')->restrictOnDelete();
             $table->string('batch', 100)->default('');
+            $table->string('sieve', 50)->nullable();
+            $table->date('manufacturing_date')->nullable();
             $table->date('expiration_date')->nullable();
             $table->string('treatment_status', 20)->default('NOT_APPLICABLE');
             $table->decimal('quantity', 16, 3)->default(0);
@@ -59,7 +51,10 @@ return new class extends Migration
             $table->decimal('average_cost', 16, 6)->default(0);
             $table->decimal('total_value', 18, 2)->default(0);
             $table->timestamps();
-            $table->unique(['product_id', 'stock_location_id', 'batch', 'treatment_status'], 'product_stock_position_unique');
+            $table->unique(
+                ['product_id', 'stock_location_id', 'culture_id', 'variety_culture_id', 'batch', 'sieve', 'treatment_status'],
+                'product_stock_position_unique'
+            );
             $table->index(['product_id', 'quantity'], 'product_stock_available_search');
         });
 
@@ -98,7 +93,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('product_stock_movements');
         Schema::dropIfExists('product_stocks');
-        Schema::dropIfExists('seed_product_profiles');
         Schema::dropIfExists('stock_locations');
         Schema::dropIfExists('document_sequences');
     }
